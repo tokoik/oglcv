@@ -1,0 +1,14 @@
+prefix=/Users/tokoi/Work/seminar1_arm64
+exec_prefix=${prefix}
+libdir=/Users/tokoi/Work/seminar1_arm64/lib
+includedir=/Users/tokoi/Work/seminar1_arm64/include
+
+Name: libswresample
+Description: FFmpeg audio resampling library
+Version: 3.9.100
+Requires: libavutil >= 56.70.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lswresample -lm
+Libs.private: 
+Cflags: -I${includedir}

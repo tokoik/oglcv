@@ -1,0 +1,10 @@
+prefix=C:/Users/tokoi/Documents/Work/seminar1_win
+exec_prefix=C:/Users/tokoi/Documents/Work/seminar1_win/bin
+libdir=C:/Users/tokoi/Documents/Work/seminar1_win/lib
+includedir=C:/Users/tokoi/Documents/Work/seminar1_win/include
+
+Name: libglog
+Description: Google Log (glog) C++ logging framework
+Version: 0.5.0
+Libs: -L${libdir} -lglog
+Cflags: -I${includedir}
