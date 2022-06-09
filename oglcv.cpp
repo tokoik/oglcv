@@ -81,6 +81,35 @@ int GgApp::main(int argc, const char* const* argv)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+  // フレームバッファオブジェクトのサイズ
+  const GLsizei fboWidth{ image.cols };
+  const GLsizei fboHeight{ image.rows };
+
+  // フレームバッファオブジェクトのカラーバッファに使うテクスチャ
+  GLuint color;
+  glGenTextures(1, &color);
+  glBindTexture(GL_TEXTURE_2D, color);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fboWidth, fboHeight, 0,
+    GL_BGR, GL_UNSIGNED_BYTE, 0);
+
+  // テクスチャをサンプリングする方法の指定
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // フレームバッファオブジェクトの準備
+  GLuint fbo;
+  glGenFramebuffers(1, &fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+  // フレームバッファオブジェクトにカラーバッファに使うテクスチャを組み込む
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, color, 0);
+
+  // レンダリングターゲット
+  const GLenum bufs[] = { GL_COLOR_ATTACHMENT0 };
+
+  // 標準のフレームバッファに戻す
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
   // 背景色の設定
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -98,6 +127,15 @@ int GgApp::main(int argc, const char* const* argv)
   // ウィンドウが開いている間繰り返す
   while (window)
   {
+    // フレームバッファオブジェクトへの描画
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    // このフレームバッファオブジェクトにはデプスバッファが無い
+    glDepthMask(GL_FALSE);
+
+    // ビューポートをフレームバッファオブジェクトに合わせる
+    glViewport(0, 0, fboWidth, fboHeight);
+
     // 画面クリア
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -105,7 +143,7 @@ int GgApp::main(int argc, const char* const* argv)
     glUseProgram(program);
 
     // ウィンドウのアスペクト比
-    const GLfloat aspect{ GLfloat(window.getWidth()) / GLfloat(window.getHeight()) };
+    const GLfloat aspect{ GLfloat(fboWidth) / GLfloat(fboHeight) };
 
     // uniform 変数に値を設定する
     glUniform1f(aspectLoc, aspect);
@@ -130,8 +168,25 @@ int GgApp::main(int argc, const char* const* argv)
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
 
+    // レンダーターゲットの指定
+    glDrawBuffers(std::size(bufs), bufs);
+
     // 図形の描画
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // 標準のフレームバッファへの転送
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    GLsizei w{ window.getWidth() };
+    GLsizei h{ window.getHeight() };
+    GLsizei x{ w / 2 };
+    GLsizei y{ h / 2 };
+    float t{ h * aspect };
+    if (h * aspect > w) h = w / aspect; else w = t;
+    x -= w / 2;
+    y -= h / 2;
+    glBlitFramebuffer(0, 0, fboWidth, fboHeight, x, y, x + w, y + h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
     // カラーバッファを入れ替えてイベントを取り出す
     window.swapBuffers();
