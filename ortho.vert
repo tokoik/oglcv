@@ -15,6 +15,6 @@ out vec2 texcoord;
 void main()
 {
   vec2 size = vec2(textureSize(image, 0));
-  gl_Position = position * vec4(size.x / size.y * 0.5 / aspect, 0.5, 0.5, 1.0);
+  gl_Position = position * vec4(size.x / size.y / aspect, 1.0, 1.0, 1.0);
   texcoord = position.xy * vec2(0.5, -0.5) + 0.5;
 }
