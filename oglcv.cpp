@@ -154,12 +154,15 @@ int GgApp::main(int argc, const char* const* argv)
     glUniform1i(imageLoc, 0);
     glUniform1i(nextLoc, 1);
 
+    // テクスチャユニット番号
+    const int unit{ glfwGetKey(window.get(), GLFW_KEY_SPACE) == GLFW_RELEASE ? 1 : 0 };
+
     // カメラのフレームが更新されたら
     if (update && !lock.exchange(true))
     {
       // テクスチャユニットを指定する
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, textures[0]);
+      glActiveTexture(GL_TEXTURE0 + unit);
+      glBindTexture(GL_TEXTURE_2D, textures[unit]);
 
       // テクスチャに転送する
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.cols, image.rows,
@@ -171,8 +174,8 @@ int GgApp::main(int argc, const char* const* argv)
     }
 
     // 二つ目のテクスチャユニットを指定する
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glActiveTexture(GL_TEXTURE1 - unit);
+    glBindTexture(GL_TEXTURE_2D, textures[1 - unit]);
 
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
