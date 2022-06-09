@@ -36,6 +36,9 @@ int GgApp::main(int argc, const char* const* argv)
   // 頂点配列オブジェクト完成
   glBindVertexArray(0);
 
+  // プログラムオブジェクトの作成
+  const GLuint program{ ggLoadShader("ortho.vert", "ortho.frag") };
+
   // 背景色の設定
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -45,9 +48,14 @@ int GgApp::main(int argc, const char* const* argv)
     // 画面クリア
     glClear(GL_COLOR_BUFFER_BIT);
 
-    //
-    // ここで図形を描く
-    //
+    // プログラムオブジェクトの指定
+    glUseProgram(program);
+
+    // 頂点配列オブジェクトの指定
+    glBindVertexArray(vao);
+
+    // 図形の描画
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // カラーバッファを入れ替えてイベントを取り出す
     window.swapBuffers();
