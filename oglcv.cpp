@@ -61,6 +61,7 @@ int GgApp::main(int argc, const char* const* argv)
   // uniform 変数の場所を調べる
   const GLint aspectLoc{ glGetUniformLocation(program, "aspect") };
   const GLint imageLoc{ glGetUniformLocation(program, "image") };
+  const GLint nextLoc{ glGetUniformLocation(program, "past") };
 
   // キャプチャデバイスの準備
   cv::VideoCapture camera;
@@ -71,15 +72,18 @@ int GgApp::main(int argc, const char* const* argv)
   if (!camera.read(image)) throw std::runtime_error("No frames has been grabbed.");
 
   // テクスチャの準備
-  GLuint texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0,
-    GL_BGR, GL_UNSIGNED_BYTE, image.data);
+  std::array<GLuint, 2> textures;
+  glGenTextures(textures.size(), textures.data());
+  for (const auto texture : textures)
+  {
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0,
+      GL_BGR, GL_UNSIGNED_BYTE, image.data);
 
-  // テクスチャをサンプリングする方法の指定
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // テクスチャをサンプリングする方法の指定
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  }
 
   // フレームバッファオブジェクトのサイズ
   const GLsizei fboWidth{ image.cols };
@@ -148,13 +152,14 @@ int GgApp::main(int argc, const char* const* argv)
     // uniform 変数に値を設定する
     glUniform1f(aspectLoc, aspect);
     glUniform1i(imageLoc, 0);
+    glUniform1i(nextLoc, 1);
 
     // カメラのフレームが更新されたら
     if (update && !lock.exchange(true))
     {
       // テクスチャユニットを指定する
       glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, texture);
+      glBindTexture(GL_TEXTURE_2D, textures[0]);
 
       // テクスチャに転送する
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.cols, image.rows,
@@ -164,6 +169,10 @@ int GgApp::main(int argc, const char* const* argv)
       update = false;
       lock.store(false);
     }
+
+    // 二つ目のテクスチャユニットを指定する
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
 
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
