@@ -67,6 +67,9 @@ int GgApp::main(int argc, const char* const* argv)
   // キャプチャデバイスの準備
   cv::VideoCapture camera;
   if (!camera.open(0)) throw std::runtime_error("The capture device cannot be used.");
+  camera.set(cv::CAP_PROP_FRAME_WIDTH, 2592);   // 水平画素数
+  camera.set(cv::CAP_PROP_FRAME_HEIGHT, 1944);  // 垂直画素数
+  camera.set(cv::CAP_PROP_FPS, 30);             // フレームレート
 
   // キャプチャデバイスから 1 フレーム取り込む
   cv::Mat image;
