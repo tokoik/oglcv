@@ -1,8 +1,5 @@
 #version 410
 
-// 頂点の位置
-layout (location = 0) in vec4 position;
-
 // ウィンドウのアスペクト比
 uniform float aspect;
 
@@ -17,11 +14,24 @@ out vec3 texcoord;
 
 void main()
 {
+  // 頂点番号から座標値を求める
+  //
+  //   gl_VertexID   x   y
+  //   -------------------
+  //             0  -1   1
+  //             1  -1  -1
+  //             2   1   1
+  //             3   1  -1
+  //
+  int s = gl_VertexID & ~1;
+  int t = (~gl_VertexID & 1) << 1;
+  vec2 position = vec2(s, t) - 1.0;
+
   // クリッピング空間いっぱいに描く
-  gl_Position = position;
+  gl_Position = vec4(position, 0.0, 1.0);
 
   // 大きさが aspect × 1.0 のスクリーン上の点の位置
-  vec2 uv = position.st * vec2(aspect, 1.0);
+  vec2 uv = position * vec2(aspect, 1.0);
 
   // 右手系で原点から z = -focal の位置にあるその点に向かうベクトル
   vec3 xyz = vec3(uv, -focal);

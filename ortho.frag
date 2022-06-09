@@ -4,7 +4,7 @@
 layout (location = 0) out vec4 color;
 
 // 魚眼レンズの画角
-uniform vec2 fov = vec2(3.141593);
+uniform vec2 fov = vec2(3.839724);
 
 // テクスチャ座標に対するスケール
 uniform vec2 scale = vec2(0.5, -0.5);
