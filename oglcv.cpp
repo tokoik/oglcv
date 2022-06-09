@@ -16,6 +16,9 @@
 #  pragma comment(lib, "opencv_videoio" CV_VERSION_STR CV_EXT_STR)
 #endif
 
+// スレッド
+#include <thread>
+
 // アプリケーション本体
 int GgApp::main(int argc, const char* const* argv)
 {
@@ -80,6 +83,15 @@ int GgApp::main(int argc, const char* const* argv)
   // 背景色の設定
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
+  // キャプチャスレッド起動
+  bool run{ true };
+  bool update{ false };
+  auto capture{ std::thread([&] {
+    while (run) {
+      update = camera.read(image);
+    }
+  }) };
+
   // ウィンドウが開いている間繰り返す
   while (window)
   {
@@ -96,8 +108,8 @@ int GgApp::main(int argc, const char* const* argv)
     glUniform1f(aspectLoc, aspect);
     glUniform1i(imageLoc, 0);
 
-    // カメラのフレームが取り込めたら
-    if (camera.read(image))
+    // カメラのフレームが更新されたら
+    if (update)
     {
       // テクスチャユニットを指定する
       glActiveTexture(GL_TEXTURE0);
@@ -106,6 +118,9 @@ int GgApp::main(int argc, const char* const* argv)
       // テクスチャに転送する
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.cols, image.rows,
         GL_BGR, GL_UNSIGNED_BYTE, image.data);
+
+      // 転送完了を通知する
+      update = false;
     }
 
     // 頂点配列オブジェクトの指定
@@ -117,6 +132,10 @@ int GgApp::main(int argc, const char* const* argv)
     // カラーバッファを入れ替えてイベントを取り出す
     window.swapBuffers();
   }
+
+  // キャプチャスレッド停止
+  run = false;
+  capture.join();
 
   return EXIT_SUCCESS;
 }
