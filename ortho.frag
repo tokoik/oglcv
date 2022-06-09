@@ -12,17 +12,24 @@ uniform vec2 scale = vec2(0.5, -0.5);
 // テクスチャ座標の中心位置
 uniform vec2 center = vec2(0.5);
 
+// スクリーンを回転する変換行列
+uniform mat4 rotation;
+
 // サンプラ―
 uniform sampler2D image;
 uniform sampler2D past;
 
 // テクスチャ座標
-in vec3 texcoord;
+in vec2 texcoord;
 
 void main()
 {
-  // 補間された視線ベクトルを正規化する
-  vec3 direction = normalize(texcoord);
+  // テクスチャ座標から視線ベクトルを求める
+  vec3 direction = mat3(rotation) * vec3(
+    sin(texcoord.y) * cos(texcoord.x),
+    sin(texcoord.y) * sin(texcoord.x),
+    cos(texcoord.y)
+  );
 
   // テクスチャ座標を求める
   vec2 st = normalize(direction.xy) * acos(-direction.z) * 2.0 / fov;
