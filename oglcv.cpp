@@ -13,6 +13,7 @@
 #  endif
 #  pragma comment(lib, "opencv_core" CV_VERSION_STR CV_EXT_STR)
 #  pragma comment(lib, "opencv_imgcodecs" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "opencv_videoio" CV_VERSION_STR CV_EXT_STR)
 #endif
 
 // アプリケーション本体
@@ -57,9 +58,13 @@ int GgApp::main(int argc, const char* const* argv)
   const GLint aspectLoc{ glGetUniformLocation(program, "aspect") };
   const GLint imageLoc{ glGetUniformLocation(program, "image") };
 
-  // 画像の読み込み
-  cv::Mat image{ cv::imread("image.jpg") };
-  if (image.empty()) throw std::runtime_error("The image file cannot be used.");
+  // キャプチャデバイスの準備
+  cv::VideoCapture camera;
+  if (!camera.open(0)) throw std::runtime_error("The capture device cannot be used.");
+
+  // キャプチャデバイスから 1 フレーム取り込む
+  cv::Mat image;
+  if (!camera.read(image)) throw std::runtime_error("No frames has been grabbed.");
 
   // テクスチャの準備
   GLuint texture;
@@ -91,9 +96,17 @@ int GgApp::main(int argc, const char* const* argv)
     glUniform1f(aspectLoc, aspect);
     glUniform1i(imageLoc, 0);
 
-    // テクスチャユニットを指定する
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    // カメラのフレームが取り込めたら
+    if (camera.read(image))
+    {
+      // テクスチャユニットを指定する
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, texture);
+
+      // テクスチャに転送する
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.cols, image.rows,
+        GL_BGR, GL_UNSIGNED_BYTE, image.data);
+    }
 
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
