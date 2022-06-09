@@ -6,7 +6,15 @@ layout (location = 0) in vec4 position;
 // ウィンドウのアスペクト比
 uniform float aspect;
 
+// テクスチャのサンプラ
+uniform sampler2D image;
+
+// テクスチャ座標
+out vec2 texcoord;
+
 void main()
 {
-  gl_Position = position * vec4(0.5 / aspect, 0.5, 0.5, 1.0);
+  vec2 size = vec2(textureSize(image, 0));
+  gl_Position = position * vec4(size.x / size.y * 0.5 / aspect, 0.5, 0.5, 1.0);
+  texcoord = position.xy * vec2(0.5, -0.5) + 0.5;
 }
