@@ -211,5 +211,14 @@ int GgApp::main(int argc, const char* const* argv)
   run = false;
   capture.join();
 
+  // フレームバッファオブジェクトからの読み出し
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+  cv::Mat result{ cv::Size2i(fboWidth, fboHeight), CV_8UC3 };
+  glReadPixels(0, 0, fboWidth, fboHeight, GL_BGR, GL_UNSIGNED_BYTE, result.data);
+
+  // 上下を反転して保存
+  cv::flip(result, result, 0);
+  cv::imwrite("result.jpg", result);
+
   return EXIT_SUCCESS;
 }
