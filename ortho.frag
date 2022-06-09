@@ -11,5 +11,7 @@ in vec2 texcoord;
 
 void main()
 {
-  color = texture(image, texcoord);
+  // ITU-R BT.601
+  float gray = dot(vec3(0.299, 0.587, 0.114), texture(image, texcoord).rgb);
+  color = vec4(vec3(fwidth(gray)), 1.0);
 }
