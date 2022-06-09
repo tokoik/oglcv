@@ -18,7 +18,7 @@
 
 // スレッド
 #include <thread>
-#include <atomic>
+#include <mutex>
 
 // アプリケーション本体
 int GgApp::main(int argc, const char* const* argv)
@@ -87,11 +87,13 @@ int GgApp::main(int argc, const char* const* argv)
   // キャプチャスレッド起動
   bool run{ true };
   bool update{ false };
-  std::atomic<bool> lock{ false };
+  std::mutex mtx;
   auto capture{ std::thread([&] {
     while (run) {
-      update = camera.grab() && !lock.exchange(true) && camera.retrieve(image);
-      lock.store(false);
+      if (camera.grab()) {
+        std::lock_guard<std::mutex> guard{ mtx };
+        update = camera.retrieve(image);
+      }
     }
   }) };
 
@@ -112,7 +114,7 @@ int GgApp::main(int argc, const char* const* argv)
     glUniform1i(imageLoc, 0);
 
     // カメラのフレームが更新されたら
-    if (update && !lock.exchange(true))
+    if (update && mtx.try_lock())
     {
       // テクスチャユニットを指定する
       glActiveTexture(GL_TEXTURE0);
@@ -124,7 +126,7 @@ int GgApp::main(int argc, const char* const* argv)
 
       // 転送完了を通知する
       update = false;
-      lock.store(false);
+      mtx.unlock();
     }
 
     // 頂点配列オブジェクトの指定
