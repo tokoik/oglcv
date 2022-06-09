@@ -1,6 +1,20 @@
 ﻿// 補助プログラム
 #include "GgApp.h"
 
+// OpenCV
+#include "opencv2/opencv.hpp"
+#if defined(_MSC_VER)
+#  define CV_VERSION_STR \
+     CVAUX_STR(CV_MAJOR_VERSION) CVAUX_STR(CV_MINOR_VERSION) CVAUX_STR(CV_SUBMINOR_VERSION)
+#  if defined(_DEBUG)
+#    define CV_EXT_STR "d.lib"
+#  else
+#    define CV_EXT_STR ".lib"
+#  endif
+#  pragma comment(lib, "opencv_core" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "opencv_imgcodecs" CV_VERSION_STR CV_EXT_STR)
+#endif
+
 // アプリケーション本体
 int GgApp::main(int argc, const char* const* argv)
 {
@@ -41,6 +55,22 @@ int GgApp::main(int argc, const char* const* argv)
 
   // uniform 変数の場所を調べる
   const GLint aspectLoc{ glGetUniformLocation(program, "aspect") };
+  const GLint imageLoc{ glGetUniformLocation(program, "image") };
+
+  // 画像の読み込み
+  cv::Mat image{ cv::imread("image.jpg") };
+  if (image.empty()) throw std::runtime_error("The image file cannot be used.");
+
+  // テクスチャの準備
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.cols, image.rows, 0,
+    GL_BGR, GL_UNSIGNED_BYTE, image.data);
+
+  // テクスチャをサンプリングする方法の指定
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
   // 背景色の設定
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -59,6 +89,11 @@ int GgApp::main(int argc, const char* const* argv)
 
     // uniform 変数に値を設定する
     glUniform1f(aspectLoc, aspect);
+    glUniform1i(imageLoc, 0);
+
+    // テクスチャユニットを指定する
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
