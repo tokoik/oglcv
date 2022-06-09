@@ -39,6 +39,9 @@ int GgApp::main(int argc, const char* const* argv)
   // プログラムオブジェクトの作成
   const GLuint program{ ggLoadShader("ortho.vert", "ortho.frag") };
 
+  // uniform 変数の場所を調べる
+  const GLint aspectLoc{ glGetUniformLocation(program, "aspect") };
+
   // 背景色の設定
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -50,6 +53,12 @@ int GgApp::main(int argc, const char* const* argv)
 
     // プログラムオブジェクトの指定
     glUseProgram(program);
+
+    // ウィンドウのアスペクト比
+    const GLfloat aspect{ GLfloat(window.getWidth()) / GLfloat(window.getHeight()) };
+
+    // uniform 変数に値を設定する
+    glUniform1f(aspectLoc, aspect);
 
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
