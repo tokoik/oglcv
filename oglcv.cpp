@@ -60,6 +60,7 @@ int GgApp::main(int argc, const char* const* argv)
 
   // uniform 変数の場所を調べる
   const GLint aspectLoc{ glGetUniformLocation(program, "aspect") };
+  const GLint rotationLoc{ glGetUniformLocation(program, "rotation") };
   const GLint imageLoc{ glGetUniformLocation(program, "image") };
   const GLint nextLoc{ glGetUniformLocation(program, "past") };
 
@@ -150,6 +151,7 @@ int GgApp::main(int argc, const char* const* argv)
     const GLfloat aspect{ GLfloat(fboWidth) / GLfloat(fboHeight) };
 
     // uniform 変数に値を設定する
+    glUniformMatrix4fv(rotationLoc, 1, GL_FALSE, ggRotate(0.0f, 1.0f, 0.0f, 0.0f).get());
     glUniform1f(aspectLoc, aspect);
     glUniform1i(imageLoc, 0);
     glUniform1i(nextLoc, 1);
