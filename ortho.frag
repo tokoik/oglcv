@@ -5,13 +5,12 @@ layout (location = 0) out vec4 color;
 
 // サンプラ―
 uniform sampler2D image;
+uniform sampler2D past;
 
 // テクスチャ座標
 in vec2 texcoord;
 
 void main()
 {
-  // ITU-R BT.601
-  float gray = dot(vec3(0.299, 0.587, 0.114), texture(image, texcoord).rgb);
-  color = vec4(vec3(fwidth(gray)), 1.0);
+  color = vec4(abs(texture(image, texcoord) - texture(past, texcoord)).rgb, 1.0);
 }
