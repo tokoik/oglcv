@@ -211,5 +211,14 @@ int GgApp::main(int argc, const char* const* argv)
   run = false;
   capture.join();
 
+  // テクスチャからの読み出し
+  glBindTexture(GL_TEXTURE_2D, color);
+  cv::Mat result{ cv::Size2i(fboWidth, fboHeight), CV_8UC3 };
+  glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, result.data);
+
+  // 上下を反転して保存
+  cv::flip(result, result, 0);
+  cv::imwrite("result.jpg", result);
+
   return EXIT_SUCCESS;
 }
