@@ -155,7 +155,7 @@ int GgApp::main(int argc, const char* const* argv)
     glUniform1i(nextLoc, 1);
 
     // テクスチャユニット番号
-    const int unit{ glfwGetKey(window.get(), GLFW_KEY_SPACE) == GLFW_RELEASE ? 1 : 0 };
+    static int unit{ 0 };
 
     // カメラのフレームが更新されたら
     if (update && !lock.exchange(true))
@@ -171,11 +171,14 @@ int GgApp::main(int argc, const char* const* argv)
       // 転送完了を通知する
       update = false;
       lock.store(false);
+
+      // テクスチャユニットを入れ替える
+      unit = 1 - unit;
     }
 
     // 二つ目のテクスチャユニットを指定する
-    glActiveTexture(GL_TEXTURE1 - unit);
-    glBindTexture(GL_TEXTURE_2D, textures[1 - unit]);
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, textures[unit]);
 
     // 頂点配列オブジェクトの指定
     glBindVertexArray(vao);
