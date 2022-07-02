@@ -164,7 +164,7 @@ int GgApp::main(int argc, const char* const* argv)
     glDrawBuffers(std::size(bufs), bufs);
 
     // 図形の描画
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 41 * 2 + 2, 31);
 
     // 標準のフレームバッファへの転送
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
