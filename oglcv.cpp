@@ -3,6 +3,7 @@
 
 // OpenCV
 #include "opencv2/opencv.hpp"
+#include "opencv2/aruco.hpp"
 #if defined(_MSC_VER)
 #  define CV_VERSION_STR \
      CVAUX_STR(CV_MAJOR_VERSION) CVAUX_STR(CV_MINOR_VERSION) CVAUX_STR(CV_SUBMINOR_VERSION)
@@ -14,11 +15,15 @@
 #  pragma comment(lib, "opencv_core" CV_VERSION_STR CV_EXT_STR)
 #  pragma comment(lib, "opencv_imgcodecs" CV_VERSION_STR CV_EXT_STR)
 #  pragma comment(lib, "opencv_videoio" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "opencv_aruco" CV_VERSION_STR CV_EXT_STR)
 #endif
 
 // スレッド
 #include <thread>
 #include <atomic>
+
+// PBO をマップしてマーカーを検出するとき
+#define USE_PBO
 
 // アプリケーション本体
 int GgApp::main(int argc, const char* const* argv)
@@ -89,6 +94,26 @@ int GgApp::main(int argc, const char* const* argv)
 
   // 標準のフレームバッファに戻す
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // フレームバッファの読み出しに使うピクセルバッファオブジェクトを作成する
+  GLuint pixel;
+  glGenBuffers(1, &pixel);
+
+  // フレームバッファと同じサイズのメモリを確保する
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, pixel);
+  glBufferData(GL_PIXEL_PACK_BUFFER, fboWidth * fboHeight * 3, nullptr, GL_DYNAMIC_COPY);
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+  // ピクセルバッファオブジェクトのデータのコピー先
+  cv::Mat buffer{ cv::Size(fboWidth, fboHeight), CV_8UC3 };
+
+  // ArUco Marker の辞書と検出パラメータ
+  const cv::Ptr<cv::aruco::Dictionary> dictionary{ cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_1000) };
+  const cv::Ptr<cv::aruco::DetectorParameters> parameters{ cv::aruco::DetectorParameters::create() };
+
+  // 検出された ArUco Marker の ID と位置
+  std::vector<int> ids;
+  std::vector<std::vector<cv::Point2f>> corners, rejected;
 
   // 背景色の設定
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -166,6 +191,69 @@ int GgApp::main(int argc, const char* const* argv)
     // 図形の描画
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 41 * 2 + 2, 31);
 
+    glfwSetTime(0.0);
+#if defined(USE_PBO)
+    // フレームバッファオブジェクトからピクセルバッファオブジェクトにコピー
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pixel);
+    glReadPixels(0, 0, fboWidth, fboHeight, GL_BGR, GL_UNSIGNED_BYTE, 0);
+
+    // ピクセルバッファオブジェクトを CPU のメモリにマップ
+    cv::Mat frame{ cv::Size(fboWidth, fboHeight), CV_8UC3,
+      glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_WRITE) };
+
+    // マーカーを検出する
+    cv::aruco::detectMarkers(frame, dictionary, corners, ids, parameters, rejected);
+
+    // ピクセルバッファオブジェクトを開放
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    // マーカーが見つかったら
+    if (ids.size() > 0)
+    {
+      // 検出結果を表示に描き込む
+      cv::aruco::drawDetectedMarkers(frame, corners, ids);
+      glBindTexture(GL_TEXTURE_2D, color);
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pixel);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, fboWidth, fboHeight,
+        GL_BGR, GL_UNSIGNED_BYTE, 0);
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    }
+#else
+    // ピクセルバッファオブジェクトから CPU のメモリにコピー
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pixel);
+    glGetBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, fboWidth * fboHeight * 3, buffer.data);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    // マーカーを検出する
+    cv::aruco::detectMarkers(buffer, dictionary,
+      markerCorners, markerIds, parameters, rejectedCandidates);
+
+    // マーカーが見つかったら
+    if (markerIds.size() > 0)
+    {
+      // 検出結果を表示に描き込む
+      cv::aruco::drawDetectedMarkers(buffer, markerCorners, markerIds);
+      glBindTexture(GL_TEXTURE_2D, color);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, fboWidth, fboHeight,
+        GL_BGR, GL_UNSIGNED_BYTE, buffer.data);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    }
+#endif
+    std::cerr << glfwGetTime() << '\n';
+
+#ifdef _DEBUG
+    for (auto& corner : corners)
+    {
+      for (auto& point : corner)
+      {
+        std::cout << "(" << point.x << ", " << point.y << ")";
+      }
+      std::cout << std::endl;
+    }
+#endif
+
     // 標準のフレームバッファへの転送
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -178,7 +266,7 @@ int GgApp::main(int argc, const char* const* argv)
     if (h * aspect > w) h = w / aspect; else w = t;
     x -= w / 2;
     y -= h / 2;
-    glBlitFramebuffer(0, 0, fboWidth, fboHeight, x, y, x + w, y + h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glBlitFramebuffer(0, 0, fboWidth, fboHeight, x, y + h, x + w, y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
     // カラーバッファを入れ替えてイベントを取り出す
     window.swapBuffers();
@@ -193,8 +281,7 @@ int GgApp::main(int argc, const char* const* argv)
   cv::Mat result{ cv::Size2i(fboWidth, fboHeight), CV_8UC3 };
   glReadPixels(0, 0, fboWidth, fboHeight, GL_BGR, GL_UNSIGNED_BYTE, result.data);
 
-  // 上下を反転して保存
-  cv::flip(result, result, 0);
+  // 結果を保存
   cv::imwrite("result.jpg", result);
 
   return EXIT_SUCCESS;
