@@ -1,11 +1,11 @@
 #
 # for Linux
 #
-/*.dep
-/*.o
 /oglcv
-/a.out
 /core
+a.out
+*.o
+*.dep
 #
 # for Mac
 #
@@ -28,10 +28,10 @@ xcuserdata
 # for Windows
 #
 .vs/
-.vscode/
-/x64/
 /[Dd]ebug/
 /[Rr]elease/
+/[Ww][Ii][Nn]32/
+/x64/
 /ipch/
 /packages/
 *.com
@@ -43,10 +43,11 @@ xcuserdata
 *.opendb
 *.userosscache
 *.sln.docstates
-*.opendb
-*.db
+*.VC.opendb
+*.VC.db
 *.aps
 *.msi
+Thumbs.db
 #
 # anothre stuff
 #
@@ -54,5 +55,5 @@ xcuserdata
 *.bak
 *.tmp
 *.swp
+.vscode/
 result.jpg
-imgui.ini

@@ -1,11 +1,14 @@
-﻿//
-// ゲームグラフィックス特論宿題アプリケーション
-//
+﻿///
+/// ゲームグラフィックス特論宿題アプリケーション
+///
+/// @file
+/// @author Kohe Tokoi
+/// @date February 20, 2024
+///
+#include "GgApp.h"
 
 // MessageBox の準備
 #if defined(_MSC_VER)
-#  define NOMINMAX
-#  include <Windows.h>
 #  include <atlstr.h>
 #elif defined(__APPLE__)
 #  include <CoreFoundation/CoreFoundation.h>
@@ -14,23 +17,17 @@
 #endif
 #define HEADER_STR "ゲームグラフィックス特論"
 
-// ゲームグラフィックス特論宿題アプリケーションクラス
-#include "GgApp.h"
-
 //
 // メインプログラム
 //
 int main(int argc, const char* const* argv) try
 {
-  // ウィンドウ関連の初期設定
-#if defined(GL_GLES_PROTOTYPES)
-  Window::initialize(3, 1);
-#else
-  Window::initialize(4, 1);
-#endif
-
   // アプリケーションのオブジェクトを生成する
-  GgApp app;
+#if defined(GL_GLES_PROTOTYPES)
+  GgApp app(3, 1);
+#else
+  GgApp app(4, 1);
+#endif
 
   // アプリケーションを実行する
   return app.main(argc, argv);

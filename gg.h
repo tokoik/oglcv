@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 /*!
-** @mainpage ゲームグラフィックス特論の宿題用補助プログラム GLFW3 版
-**
 
-Copyright (c) 2011-2021 Kohe Tokoi. All Rights Reserved.
+@mainpage ゲームグラフィックス特論の宿題用補助プログラム GLFW3 版.
+
+@copyright Copyright (c) 2011-2024 Kohe Tokoi. All Rights Reserved.
 
 Permission is hereby granted, free of charge,  to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +22,65 @@ KOHE TOKOI  BE LIABLE FOR ANY CLAIM,  DAMAGES OR OTHER LIABILITY,  WHETHER IN
 AN ACTION  OF CONTRACT,  TORT  OR  OTHERWISE,  ARISING  FROM,  OUT OF  OR  IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-**
 */
 
-/*!
-** @file gg.h
-** @brief ゲームグラフィックス特論の宿題用補助プログラム GLFW3 版の宣言.
-** @author Kohe Tokoi
-** @date March 31, 2021
-** @cond INCLUDE_OPENGL_FUNCTIONS
-*/
+///
+/// ゲームグラフィックス特論の宿題用補助プログラム GLFW3 版の宣言.
+///
+/// @file
+/// @author Kohe Tokoi
+/// @date January 5, 2024
+///
+
+// 標準ライブラリ
+#include <cmath>
+#include <array>
+#include <vector>
+#include <string>
+#include <memory>
+#include <cassert>
+
+// Windows (Visual Studio) のとき
+#if defined(_MSC_VER)
+// 非推奨の警告を出さない
+#  pragma warning(disable:4996)
+// 数学ライブラリの定数を使う
+#  define _USE_MATH_DEFINES
+// MIN() / MAX マクロは使わない
+#  define NOMINMAX
+// ファイルパスの文字コード
+#include <atlstr.h>
+using pathString = CString;
+using pathChar = wchar_t;
+extern pathString Utf8ToTChar(const std::string& string);
+extern std::string TCharToUtf8(const pathString& cstring);
+// デバッグビルドかどうか調べる
+#  if defined(_DEBUG)
+#    if !defined(DEBUG)
+#      define DEBUG
+#    endif
+#    define GLFW3_CONFIGURATION "Debug"
+#  else
+#    if !defined(NDEBUG)
+#      define NDEBUG
+#    endif
+#    define GLFW3_CONFIGURATION "Release"
+#  endif
+// プラットフォームを調べる
+#  if defined(_WIN64)
+#    define GLFW3_PLATFORM "x64"
+#  else
+#    define GLFW3_PLATFORM "Win32"
+#  endif
+#else
+// ファイルパスの文字コード
+using pathString = std::string;
+using pathChar = char;
+inline pathString Utf8ToTChar(const std::string& string) { return string; }
+inline std::string TCharToUtf8(const pathString& cstring) { return cstring; }
+#endif
+
+/// @cond INCLUDE_OPENGL_FUNCTIONS
 
 // macOS で "OpenGL deprecated の警告を出さない
 #if defined(__APPLE__)
@@ -47,31 +96,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #  define GLFW_INCLUDE_GLCOREARB
 #endif
 #include <GLFW/glfw3.h>
-
-// Windows (Visual Studio) 用の設定
-#if defined(_MSC_VER)
-// 非推奨の警告を出さない
-#  pragma warning(disable:4996)
-// 数学ライブラリの定数を使う
-#  define _USE_MATH_DEFINES
-// MIN() / MAX マクロは使わない
-#  define NOMINMAX
-// APIENTRY マクロは使わない
-#  undef APIENTRY
-// デバッグビルドの時
-#  if defined(_DEBUG)
-#    define DEBUG
-#    define GLFW3_CONFIGURATION "Debug"
-#  else
-#    define GLFW3_CONFIGURATION "Release"
-#  endif
-// プラットフォームを調べる
-#  if defined(_WIN64)
-#    define GLFW3_PLATFORM "x64"
-#  else
-#    define GLFW3_PLATFORM "Win32"
-#  endif
-#endif
 
 // OpenGL 3.2 の API のエントリポイント
 #if !defined(GL3_PROTOTYPES) && !defined(GL_GLES_PROTOTYPES)
@@ -1314,19 +1338,13 @@ extern PFNGLWINDOWRECTANGLESEXTPROC glWindowRectanglesEXT;
 
 /// @endcond
 
-// 標準ライブラリ
-#include <cmath>
-#include <array>
-#include <vector>
-#include <string>
-#include <memory>
-#include <cstddef>
-
-/// @brief ゲームグラフィックス特論の宿題用補助プログラムの名前空間
+///
+/// ゲームグラフィックス特論の宿題用補助プログラムの名前空間
 ///
 namespace gg
 {
-  /// @brief 光源と材質の uniform buffer object の結合ポイント.
+  ///
+  /// 光源と材質の uniform buffer object の結合ポイント.
   ///
   enum BindingPoints
   {
@@ -1334,30 +1352,38 @@ namespace gg
     MaterialBindingPoint,   ///< @brief 材質の uniform buffer object の結合ポイント.
   };
 
-  /// @brief 使用している GPU のバッファオブジェクトのアライメント, 初期化に取得される.
+  ///
+  /// 使用している GPU のバッファオブジェクトのアライメント, 初期化に取得される.
   ///
   extern GLint ggBufferAlignment;
 
-  /// @brief ゲームグラフィックス特論の都合にもとづく初期化を行う.
   ///
-  ///   Windows において OpenGL 1.2 以降の API を有効化する.
+  /// ゲームグラフィックス特論の都合にもとづく初期化を行う.
+  ///
+  /// @note
+  /// Windows において OpenGL 1.2 以降の API を有効化する.
   ///
   extern void ggInit();
 
-  /// @brief OpenGL のエラーをチェックする.
   ///
-  ///   OpenGL の API を呼び出し直後に実行すればエラーのあるときにメッセージを表示する.
+  /// OpenGL のエラーをチェックする.
   ///
-  ///   @param name エラー発生時に標準エラー出力に出力する文字列, nullptr なら何も出力しない.
-  ///   @param line エラー発生時に標準エラー出力に出力する数値, 0 なら何も出力しない.
+  /// @param name エラー発生時に標準エラー出力に出力する文字列, nullptr なら何も出力しない.
+  /// @param line エラー発生時に標準エラー出力に出力する数値, 0 なら何も出力しない.
+  ///
+  /// @note
+  /// OpenGL の API を呼び出し直後に実行すればエラーのあるときにメッセージを表示する.
   ///
   extern void _ggError(const std::string& name = "", unsigned int line = 0);
 
+  ///
+  /// OpenGL のエラーの発生を検知したときにソースファイル名と行番号を表示する.
+  ///
   /// @def ggError()
   ///
-  /// @brief OpenGL のエラーの発生を検知したときにソースファイル名と行番号を表示する.
-  ///
-  /// このマクロを置いた場所（より前）で OpenGL のエラーが発生していた時に, このマクロを置いたソースファイル名と行番号を出力する.
+  /// @note
+  /// このマクロを置いた場所（より前）で OpenGL のエラーが発生していた時に,
+  /// このマクロを置いたソースファイル名と行番号を出力する.
   /// リリースビルド時には無視される.
   ///
 #if defined(DEBUG)
@@ -1366,20 +1392,25 @@ namespace gg
 #  define ggError()
 #endif
 
-  /// @brief FBO のエラーをチェックする.
   ///
-  ///   FBO の API を呼び出し直後に実行すればエラーのあるときにメッセージを表示する.
+  /// FBO のエラーをチェックする.
   ///
-  ///   @param name エラー発生時に標準エラー出力に出力する文字列, nullptr なら何も出力しない.
-  ///   @param line エラー発生時に標準エラー出力に出力する数値, 0 なら何も出力しない.
+  /// @param name エラー発生時に標準エラー出力に出力する文字列, nullptr なら何も出力しない.
+  /// @param line エラー発生時に標準エラー出力に出力する数値, 0 なら何も出力しない.
+  ///
+  /// @note
+  /// FBO の API を呼び出し直後に実行すればエラーのあるときにメッセージを表示する.
   ///
   extern void _ggFBOError(const std::string& name = "", unsigned int line = 0);
 
+  ///
+  /// FBO のエラーの発生を検知したときにソースファイル名と行番号を表示する.
+  ///
   /// @def ggFBOError()
   ///
-  /// @brief FBO のエラーの発生を検知したときにソースファイル名と行番号を表示する.
-  ///
-  /// このマクロを置いた場所（より前）で FBO のエラーが発生していた時に, このマクロを置いたソースファイル名と行番号を出力する.
+  /// @note
+  /// このマクロを置いた場所（より前）で FBO のエラーが発生していた時に,
+  /// このマクロを置いたソースファイル名と行番号を出力する.
   /// リリースビルド時には無視される.
   ///
 #if defined(DEBUG)
@@ -1388,12 +1419,13 @@ namespace gg
 #  define ggFBOError()
 #endif
 
-  /// @brief 3 要素の外積.
   ///
-  ///   @param a GLfloat 型の 3 要素の配列変数.
-  ///   @param b GLfloat 型の 3 要素の配列変数.
-  ///   @param c 結果を格納する GLfloat 型の 3 要素の配列変数.
-  /// 
+  /// 3 要素の外積.
+  ///
+  /// @param a GLfloat 型の 3 要素の配列変数.
+  /// @param b GLfloat 型の 3 要素の配列変数.
+  /// @param c 結果を格納する GLfloat 型の 3 要素の配列変数.
+  ///
   inline void ggCross(GLfloat* c, const GLfloat* a, const GLfloat* b)
   {
     c[0] = a[1] * b[2] - a[2] * b[1];
@@ -1401,90 +1433,100 @@ namespace gg
     c[2] = a[0] * b[1] - a[1] * b[0];
   }
 
-  /// @brief 3 要素の内積.
   ///
-  ///   @param a GLfloat 型の 3 要素の配列変数.
-  ///   @param b GLfloat 型の 3 要素の配列変数.
-  ///   @return a と b のそれぞれの 3 要素の内積.
+  /// 3 要素の内積.
+  ///
+  /// @param a GLfloat 型の 3 要素の配列変数.
+  /// @param b GLfloat 型の 3 要素の配列変数.
+  /// @return a と b のそれぞれの 3 要素の内積.
   ///
   inline GLfloat ggDot3(const GLfloat* a, const GLfloat* b)
   {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   }
 
-  /// @brief 3 要素の長さ.
   ///
-  ///   @param a GLfloat 型の 3 要素の配列変数.
-  ///   @return a の 3 要素の長さ.
+  /// 3 要素の長さ.
+  ///
+  /// @param a GLfloat 型の 3 要素の配列変数.
+  /// @return a の 3 要素の長さ.
   ///
   inline GLfloat ggLength3(const GLfloat* a)
   {
     return sqrtf(ggDot3(a, a));
   }
 
-  /// @brief 3 要素の距離.
   ///
-  ///   @param a GLfloat 型の 3 要素の配列変数.
-  ///   @param b GLfloat 型の 3 要素の配列変数.
-  ///   @return a と b の距離.
-  /// 
+  /// 3 要素の距離.
+  ///
+  /// @param a GLfloat 型の 3 要素の配列変数.
+  /// @param b GLfloat 型の 3 要素の配列変数.
+  /// @return a と b の距離.
+  ///
   inline GLfloat ggDistance3(const GLfloat* a, const GLfloat* b)
   {
-  	const GLfloat c[]{ a[0] - b[0], a[1] - b[1], a[2] - b[2], 0.0f };
+    const GLfloat c[]{ a[0] - b[0], a[1] - b[1], a[2] - b[2], 0.0f };
     return ggLength3(c);
   }
 
-  /// @brief 3 要素の正規化.
   ///
-  ///   @param a GLfloat 型の 3 要素の配列変数.
-  ///   @param b a の 3 要素を正規化した結果を格納する GLfloat 型の 3 要素の配列変数.
+  /// 3 要素の正規化.
+  ///
+  /// @param a GLfloat 型の 3 要素の配列変数.
+  /// @param b a の 3 要素を正規化した結果を格納する GLfloat 型の 3 要素の配列変数.
   ///
   inline void ggNormalize3(const GLfloat* a, GLfloat* b)
   {
     const GLfloat l{ ggLength3(a) };
+    assert(l > 0.0f);
     b[0] = a[0] / l;
     b[1] = a[1] / l;
     b[2] = a[2] / l;
   }
 
-  /// @brief 3 要素の正規化.
   ///
-  ///   @param a GLfloat 型の 3 要素の配列変数.
+  /// 3 要素の正規化.
+  ///
+  /// @param a GLfloat 型の 3 要素の配列変数.
   ///
   inline void ggNormalize3(GLfloat* a)
   {
     const GLfloat l{ ggLength3(a) };
+    assert(l > 0.0f);
     a[0] /= l;
     a[1] /= l;
     a[2] /= l;
   }
 
-  /// @brief GLfloat 型の 4 要素の内積
   ///
-  ///   @param a GLfloat 型の 4 要素の配列変数.
-  ///   @param b GLfloat 型の 4 要素の配列変数.
-  ///   @return a と b のそれぞれの 4 要素の内積.
+  /// GLfloat 型の 4 要素の内積
+  ///
+  /// @param a GLfloat 型の 4 要素の配列変数.
+  /// @param b GLfloat 型の 4 要素の配列変数.
+  /// @return a と b のそれぞれの 4 要素の内積.
   ///
   inline GLfloat ggDot4(const GLfloat* a, const GLfloat* b)
   {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
   }
 
-  /// @brief GLfloat 型の 4 要素の長さ.
   ///
-  ///   @param a GLfloat 型の 4 要素の配列変数.
-  ///   @return a の 4 要素の長さ.
+  /// GLfloat 型の 4 要素の長さ.
+  ///
+  /// @param a GLfloat 型の 4 要素の配列変数.
+  /// @return a の 4 要素の長さ.
   ///
   inline GLfloat ggLength4(const GLfloat* a)
   {
     return sqrtf(ggDot4(a, a));
   }
 
-  /// @brief GLfloat 型の 4 要素の距離.
   ///
-  ///   @param a GLfloat 型の 4 要素の配列変数.
-  ///   @param b GLfloat 型の 4 要素の配列変数.
-  ///   @return a と b のそれぞれの 4 要素の距離.
+  /// GLfloat 型の 4 要素の距離.
+  ///
+  /// @param a GLfloat 型の 4 要素の配列変数.
+  /// @param b GLfloat 型の 4 要素の配列変数.
+  /// @return a と b のそれぞれの 4 要素の距離.
   ///
   inline GLfloat ggDistance4(const GLfloat* a, const GLfloat* b)
   {
@@ -1492,100 +1534,112 @@ namespace gg
     return ggLength4(c);
   }
 
-  /// @brief GLfloat 型の 4 要素の正規化.
   ///
-  ///   @param a GLfloat 型の 4 要素の配列変数.
-  ///   @param b a を正規化した結果を格納する GLfloat 型の 4 要素の配列変数.
+  /// GLfloat 型の 4 要素の正規化.
+  ///
+  /// @param a GLfloat 型の 4 要素の配列変数.
+  /// @param b a を正規化した結果を格納する GLfloat 型の 4 要素の配列変数.
   ///
   inline void ggNormalize4(const GLfloat* a, GLfloat* b)
   {
     const GLfloat l{ ggLength4(a) };
+    assert(l > 0.0f);
     b[0] = a[0] / l;
     b[1] = a[1] / l;
     b[2] = a[2] / l;
     b[3] = a[3] / l;
   }
 
-  /// @brief GLfloat 型の 4 要素の正規化.
   ///
-  ///   @param a 正規化する GLfloat 型の 4 要素の配列変数.
+  /// GLfloat 型の 4 要素の正規化.
+  ///
+  /// @param a 正規化する GLfloat 型の 4 要素の配列変数.
   ///
   inline void ggNormalize4(GLfloat* a)
   {
     const GLfloat l{ ggLength4(a) };
+    assert(l > 0.0f);
     a[0] /= l;
     a[1] /= l;
     a[2] /= l;
     a[3] /= l;
   }
 
-  /// @brief 4 要素の単精度実数の配列.
+  ///
+  /// 4 要素の単精度実数の配列.
   ///
   class GgVector : public std::array<GLfloat, 4>
   {
   public:
 
-    /// @brief コンストラクタ.
-    /// 
+    ///
+    /// コンストラクタ.
+    ///
     GgVector()
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param v0 GLfloat 型の値.
-    ///   @param v1 GLfloat 型の値.
-    ///   @param v2 GLfloat 型の値.
-    ///   @param v3 GLfloat 型の値.
-    /// 
-    constexpr GgVector(GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
-      : std::array<GLfloat, 4>{ v0, v1, v2, v3 }
-    {
-    }
-
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param c GLfloat 型の値.
-    /// 
-    constexpr GgVector(GLfloat c)
-      : GgVector{ c, c, c, c }
-    {
-    }
-
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param a GLfloat 型の 4 要素の配列変数.
-    /// 
-    constexpr GgVector(const GLfloat* a)
-      : GgVector{ a[0], a[1], a[2], a[3] }
-    {
-    }
-
-    /// @brief GgVector 型の和を返す.
     ///
-    ///   @param v GgVector 型のベクトル.
-    ///   @return オブジェクトの各要素と v の各要素の要素ごとの和.
-    /// 
+    /// コンストラクタ.
+    ///
+    /// @param v0 GLfloat 型の値.
+    /// @param v1 GLfloat 型の値.
+    /// @param v2 GLfloat 型の値.
+    /// @param v3 GLfloat 型の値.
+    ///
+    constexpr GgVector(GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) :
+      std::array<GLfloat, 4>{ v0, v1, v2, v3 }
+    {
+    }
+
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param c GLfloat 型の値.
+    ///
+    constexpr GgVector(GLfloat c) :
+      GgVector{ c, c, c, c }
+    {
+    }
+
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param a GLfloat 型の 4 要素の配列変数.
+    ///
+    constexpr GgVector(const GLfloat* a) :
+      GgVector{ a[0], a[1], a[2], a[3] }
+    {
+    }
+
+    ///
+    /// GgVector 型の和を返す.
+    ///
+    /// @param v GgVector 型のベクトル.
+    /// @return オブジェクトの各要素と v の各要素の要素ごとの和のオブジェクト.
+    ///
     GgVector operator+(const GgVector& v) const
     {
       return GgVector{ data()[0] + v[0], data()[1] + v[1], data()[2] + v[2], data()[3] + v[3] };
     }
 
-    /// @brief GgVector 型の各要素にスカラーを足した和を返す.
     ///
-    ///   @param c GLfloat 型の値.
-    ///   @return a の各要素に b を足した和.
-    /// 
+    /// GgVector 型の各要素にスカラーを足した和を返す.
+    ///
+    /// @param c GLfloat 型の値.
+    /// @return a の各要素に b を足した和のオブジェクト.
+    ///
     GgVector operator+(GLfloat c) const
     {
       return GgVector{ data()[0] + c, data()[1] + c, data()[2] + c, data()[3] + c };
     }
 
-    /// @brief GgVector 型を加算する.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素に v の各要素をそれぞれ加算したオブジェクトの参照.
-    /// 
+    /// GgVector 型を加算する.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素に v の各要素をそれぞれ加算したオブジェクトの参照.
+    ///
     GgVector& operator+=(const GgVector& v)
     {
       data()[0] += v[0];
@@ -1595,11 +1649,12 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の各要素にスカラーを加算する.
     ///
-    ///   @param c GLfloat 型の値.
-    ///   @return オブジェクトの各要素に c を足したオブジェクトの参照.
-    /// 
+    /// GgVector 型の各要素にスカラーを加算する.
+    ///
+    /// @param c GLfloat 型の値.
+    /// @return オブジェクトの各要素に c を足したオブジェクトの参照.
+    ///
     GgVector& operator+=(GLfloat c)
     {
       data()[0] += c;
@@ -1609,31 +1664,34 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の差を返す.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素と v の各要素の要素ごとの差.
-    /// 
+    /// GgVector 型の差を返す.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素と v の各要素の要素ごとの差のオブジェクト.
+    ///
     GgVector operator-(const GgVector& v) const
     {
       return GgVector{ data()[0] - v[0], data()[1] - v[1], data()[2] - v[2], data()[3] - v[3] };
     }
 
-    /// @brief GgVector 型の各要素からスカラーを引いた差を返す.
     ///
-    ///   @param c GLfloat 型の変数.
-    ///   @return オブジェクトの各要素から c を引いた差.
-    /// 
+    /// GgVector 型の各要素からスカラーを引いた差を返す.
+    ///
+    /// @param c GLfloat 型の変数.
+    /// @return オブジェクトの各要素から c を引いたオブジェクト.
+    ///
     GgVector operator-(GLfloat c) const
     {
       return GgVector{ data()[0] - c, data()[1] - c, data()[2] - c, data()[3] - c };
     }
 
-    /// @brief GgVector 型を減算する.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素に v の各要素をそれぞれ減算したオブジェクトの参照.
-    /// 
+    /// GgVector 型を減算する.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素に v の各要素をそれぞれ減算したオブジェクトの参照.
+    ///
     GgVector& operator-=(const GgVector& v)
     {
       data()[0] -= v[0];
@@ -1643,11 +1701,12 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の各要素からスカラーを引く.
     ///
-    ///   @param c GLfloat 型の変数.
-    ///   @return オブジェクトの各要素から c を引いたオブジェクトの参照.
-    /// 
+    /// GgVector 型の各要素からスカラーを引く.
+    ///
+    /// @param c GLfloat 型の変数.
+    /// @return オブジェクトの各要素から c を引いたオブジェクトの参照.
+    ///
     GgVector& operator-=(GLfloat c)
     {
       data()[0] -= c;
@@ -1657,31 +1716,33 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の積を返す.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素と v の各要素の要素ごとの積.
-    /// 
+    /// GgVector 型の積を返す.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素と v の各要素の要素ごとの積のオブジェクト.
+    ///
     GgVector operator*(const GgVector& v) const
     {
       return GgVector{ data()[0] * v[0], data()[1] * v[1], data()[2] * v[2], data()[3] * v[3] };
     }
 
-    /// @brief GgVector 型の各要素にスカラーを乗じた積を返す.
     ///
-    ///   @param a GgVector 型の変数.
-    ///   @param b GLfloat 型の変数.
-    ///   @return a の各要素に c を乗じた積.
-    /// 
+    /// GgVector 型の各要素にスカラーを乗じた積を返す.
+    ///
+    /// @param c GLfloat 型の変数.
+    /// @return オブジェクトの各要素に c を乗じたオブジェクト.
+    ///
     GgVector operator*(GLfloat c) const
     {
       return GgVector{ data()[0] * c, data()[1] * c, data()[2] * c, data()[3] * c };
     }
 
-    /// @brief GgVector 型を乗算する.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素に v の各要素をそれぞれ乗算したオブジェクトの参照.
+    /// GgVector 型を乗算する.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素に v の各要素をそれぞれ乗算したオブジェクトの参照.
     GgVector& operator*=(const GgVector& v)
     {
       data()[0] *= v[0];
@@ -1691,11 +1752,12 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の各要素にスカラーを乗じる.
     ///
-    ///   @param c GgVector 型のベクトル.
-    ///   @return オブジェクトの各要素に c を乗じたオブジェクトの参照.
-    /// 
+    /// GgVector 型の各要素にスカラーを乗じる.
+    ///
+    /// @param c GgVector 型のベクトル.
+    /// @return オブジェクトの各要素に c を乗じたオブジェクトの参照.
+    ///
     GgVector& operator*=(GLfloat c)
     {
       data()[0] *= c;
@@ -1705,21 +1767,23 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の商を返す.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素を v の各要素で要素ごとに割った結果.
-    /// 
+    /// GgVector 型の商を返す.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素を v の各要素で要素ごとに割った結果のオブジェクト.
+    ///
     GgVector operator/(const GgVector& v) const
     {
       return GgVector{ data()[0] / v[0], data()[1] / v[1], data()[2] / v[2], data()[3] / v[3] };
     }
 
-    /// @brief GgVector 型を除算する.
     ///
-    ///   @param v GgVector 型の変数.
-    ///   @return オブジェクトの各要素に v の各要素をそれぞれ乗算したオブジェクトの参照.
-    /// 
+    /// GgVector 型を除算する.
+    ///
+    /// @param v GgVector 型の変数.
+    /// @return オブジェクトの各要素に v の各要素をそれぞれ乗算したオブジェクトの参照.
+    ///
     GgVector& operator/=(GgVector& v)
     {
       data()[0] /= v[0];
@@ -1729,22 +1793,23 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の各要素をスカラーで割った商を返す.
     ///
-    ///   @param c GLfloat 型の値.
-    ///   @return オブジェクトの各要素を c で割った商.
-    /// 
+    /// GgVector 型の各要素をスカラーで割った商を返す.
+    ///
+    /// @param c GLfloat 型の値.
+    /// @return オブジェクトの各要素を c で割った商のオブジェクト.
+    ///
     GgVector operator/(GLfloat c) const
     {
       return GgVector{ data()[0] / c, data()[1] / c, data()[2] / c, data()[3] / c };
     }
 
     ///
-    /// @brief GgVector 型の各要素をスカラーで割る.
+    /// GgVector 型の各要素をスカラーで割る.
     ///
-    ///   @param c GLfloat 型の変数.
-    ///   @return オブジェクトの各要素を c で割ったオブジェクトの参照.
-    /// 
+    /// @param c GLfloat 型の変数.
+    /// @return オブジェクトの各要素を c で割ったオブジェクトの参照.
+    ///
     GgVector& operator/=(GLfloat c)
     {
       data()[0] /= c;
@@ -1754,41 +1819,43 @@ namespace gg
       return *this;
     }
 
-    /// @brief GgVector 型の 3 要素の内積.
     ///
-    ///   @param v GgVector 型のベクトル.
-    ///   @return オブジェクトと v のそれぞれの 3 要素の内積.
-    /// 
+    /// GgVector 型の 3 要素の内積.
+    ///
+    /// @param v GgVector 型のベクトル.
+    /// @return オブジェクトと v のそれぞれの 3 要素の内積.
+    ///
     GLfloat dot3(const GgVector& v) const
     {
       return ggDot3(data(), v.data());
     }
 
     ///
-    /// @brief GgVector 型の 3 要素の長さ.
+    /// GgVector 型の 3 要素の長さ.
     ///
-    ///   @return オブジェクトの 4 要素の長さ.
-    /// 
+    /// @return オブジェクトの 4 要素の長さ.
+    ///
     GLfloat length3() const
     {
       return ggLength3(data());
     }
 
-    /// @brief GgVector 型の 3 要素の距離.
     ///
-    ///   @param v GgVector 型のベクトル.
-    ///   @return オブジェクトと v の 3 要素の距離.
-    /// 
+    /// GgVector 型の 3 要素の距離.
+    ///
+    /// @param v GgVector 型のベクトル.
+    /// @return オブジェクトと v の 3 要素の距離.
+    ///
     GLfloat distance3(const GgVector& v) const
     {
       return ggDistance3(data(), v.data());
     }
 
     ///
-    /// @brief GgVector 型の 4 要素の正規化.
+    /// GgVector 型の 4 要素の正規化.
     ///
-    ///   @param a GLfloat 型の 4 要素の配列変数.
-    /// 
+    /// @return GLfloat 型の 4 要素の配列変数.
+    ///
     GgVector normalize3() const
     {
       GgVector b;
@@ -1796,41 +1863,43 @@ namespace gg
       return b;
     }
 
-    /// @brief GgVector 型の 4 要素の内積.
     ///
-    ///   @param v GgVector 型のベクトル.
-    ///   @return オブジェクトと v のそれぞれの 4 要素の内積.
-    /// 
+    /// GgVector 型の 4 要素の内積.
+    ///
+    /// @param v GgVector 型のベクトル.
+    /// @return オブジェクトと v のそれぞれの 4 要素の内積.
+    ///
     GLfloat dot4(const GgVector& v) const
     {
       return ggDot4(data(), v.data());
     }
 
     ///
-    /// @brief GgVector 型の 4 要素の長さ.
+    /// GgVector 型の 4 要素の長さ.
     ///
-    ///   @return オブジェクトの 4 要素の長さ.
-    /// 
+    /// @return オブジェクトの 4 要素の長さ.
+    ///
     GLfloat length4() const
     {
       return ggLength4(data());
     }
 
-    /// @brief GgVector 型の 4 要素の距離.
     ///
-    ///   @param v GgVector 型のベクトル.
-    ///   @return オブジェクトと v の 4 要素の距離.
-    /// 
+    /// GgVector 型の 4 要素の距離.
+    ///
+    /// @param v GgVector 型のベクトル.
+    /// @return オブジェクトと v の 4 要素の距離.
+    ///
     GLfloat distance4(const GgVector& v) const
     {
       return ggDistance4(data(), v.data());
     }
 
     ///
-    /// @brief GgVector 型の 4 要素の正規化.
+    /// GgVector 型の 4 要素の正規化.
     ///
-    ///   @param a GLfloat 型の 4 要素の配列変数.
-    /// 
+    /// @return GLfloat 型の 4 要素の配列変数.
+    ///
     GgVector normalize4() const
     {
       GgVector b;
@@ -1839,76 +1908,85 @@ namespace gg
     }
   };
 
-  /// @brief 何もしない.
   ///
-  ///   @param v GgVector 型のベクトル.
-  ///   @return v の値.
+  /// 何もしない.
+  ///
+  /// @param v GgVector 型のベクトル.
+  /// @return v の値.
   ///
   inline const GgVector& operator+(const GgVector& v)
   {
     return v;
   }
 
-  /// @brief スカラーに GgVector 型の各要素を足した和を返す.
   ///
-  ///   @param a GLfloat 型の値.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a に b の各要素を足した和.
+  /// スカラーに GgVector 型の各要素を足した和を返す.
+  ///
+  /// @param a GLfloat 型の値.
+  /// @param b GgVector 型のベクトル.
+  /// @return a に b の各要素を足した和.
   ///
   inline GgVector operator+(GLfloat a, const GgVector& b)
   {
     return GgVector{ a + b[0], a + b[1], a + b[2], a + b[3] };
   }
 
-  /// @brief 符号の反転.
   ///
-  ///   @param v GgVector 型のベクトル.
-  ///   @return v の値の符号を反転した結果.
+  /// 符号の反転.
+  ///
+  /// @param v GgVector 型のベクトル.
+  /// @return v の値の符号を反転した結果.
   ///
   inline const GgVector operator-(const GgVector& v)
   {
     return GgVector{ -v[0], -v[1], -v[2], -v[3] };
   }
 
-  /// @brief スカラーから GgVector 型の各要素を引いた差を返す.
   ///
-  ///   @param a GLfloat 型の値.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a から b の各要素を引いた差.
+  /// スカラーから GgVector 型の各要素を引いた差を返す.
+  ///
+  /// @param a GLfloat 型の値.
+  /// @param b GgVector 型のベクトル.
+  /// @return a から b の各要素を引いた差.
   ///
   inline GgVector operator-(GLfloat a, const GgVector& b)
   {
     return GgVector{ a - b[0], a - b[1], a - b[2], a - b[3] };
   }
 
-  /// @brief スカラーに GgVector 型の各要素を乗じた積を返す.
   ///
-  ///   @param a GLfloat 型の値.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a に b の各要素を乗じた積.
+  /// スカラーに GgVector 型の各要素を乗じた積を返す.
+  ///
+  /// @param a GLfloat 型の値.
+  /// @param b GgVector 型のベクトル.
+  /// @return a に b の各要素を乗じた積.
   ///
   inline GgVector operator*(GLfloat a, const GgVector& b)
   {
     return GgVector{ a * b[0], a * b[1], a * b[2], a * b[3] };
   }
 
-  /// @brief スカラーを GgVector 型の各要素で割った商を返す.
   ///
-  ///   @param a GLfloat 型の値.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a を b の各要素で割った商.
+  /// スカラーを GgVector 型の各要素で割った商を返す.
+  ///
+  /// @param a GLfloat 型の値.
+  /// @param b GgVector 型のベクトル.
+  /// @return a を b の各要素で割った商.
   ///
   inline GgVector operator/(GLfloat a, const GgVector& b)
   {
     return GgVector{ a / b[0], a / b[1], a / b[2], a / b[3] };
   }
 
-  /// @brief GgVector 型の 3 要素の外積.
   ///
-  ///   @param a GgVector 型のベクトル.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a と b の外積.
-  ///   @note 戻り値の w (第4) 要素は 0.
+  /// GgVector 型の 3 要素の外積.
+  ///
+  /// @param a GgVector 型のベクトル.
+  /// @param b GgVector 型のベクトル.
+  /// @return a と b の外積.
+  ///
+  /// @note
+  /// 戻り値の w (第4) 要素は 0.
   ///
   inline GgVector ggCross(const GgVector& a, const GgVector& b)
   {
@@ -1917,43 +1995,49 @@ namespace gg
     return c;
   }
 
-  /// @brief GgVector 型の 3 要素の内積.
   ///
-  ///   @param a GgVector 型のベクトル.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a と b のそれぞれの 3 要素の内積.
+  /// GgVector 型の 3 要素の内積.
+  ///
+  /// @param a GgVector 型のベクトル.
+  /// @param b GgVector 型のベクトル.
+  /// @return a と b のそれぞれの 3 要素の内積.
   ///
   inline GLfloat ggDot3(const GgVector& a, const GgVector& b)
   {
     return ggDot3(a.data(), b.data());;
   }
 
-  /// @brief GgVector 型の 3 要素の長さ.
   ///
-  ///   @param a GgVector 型のベクトル.
-  ///   @return a の 3 要素の長さ.
+  /// GgVector 型の 3 要素の長さ.
+  ///
+  /// @param a GgVector 型のベクトル.
+  /// @return a の 3 要素の長さ.
   ///
   inline GLfloat ggLength3(const GgVector& a)
   {
     return ggLength3(a.data());
   }
 
-  /// @brief GgVector 型の 3 要素の距離.
   ///
-  ///   @param a GgVector 型のベクトル.
-  ///   @param b GgVector 型のベクトル.
-  ///   @return a と b の距離.
+  /// GgVector 型の 3 要素の距離.
+  ///
+  /// @param a GgVector 型のベクトル.
+  /// @param b GgVector 型のベクトル.
+  /// @return a と b の距離.
   ///
   inline GLfloat ggDistance3(const GgVector& a, const GgVector& b)
   {
     return ggDistance3(a.data(), b.data());
   }
 
-  /// @brief GgVector 型の 3 要素の正規化.
   ///
-  ///   @param a GgVector 型のベクトル.
-  ///   @return a の 3 要素を正規化したもの.
-  ///   @note 戻り値の w (第4) 要素は 0 になる.
+  /// GgVector 型の 3 要素の正規化.
+  ///
+  /// @param a GgVector 型のベクトル.
+  /// @return a の 3 要素を正規化したもの.
+  ///
+  /// @note
+  /// 戻り値の w (第4) 要素は 0 になる.
   ///
   inline GgVector ggNormalize3(const GgVector& a)
   {
@@ -1963,10 +2047,13 @@ namespace gg
     return b;
   }
 
-  /// @brief GgVector 型の 3 要素の正規化.
   ///
-  ///   @param a GgVector 型の変数のポインタ.
-  ///   @note a の w (第4) 要素は 0 になる.
+  /// GgVector 型の 3 要素の正規化.
+  ///
+  /// @param a GgVector 型の変数のポインタ.
+  ///
+  /// @note
+  /// a の w (第4) 要素は 0 になる.
   ///
   inline void ggNormalize3(GgVector* a)
   {
@@ -1974,42 +2061,46 @@ namespace gg
     a->data()[3] = 0.0f;
   }
 
-  /// @brief GgVector 型の 4 要素の内積.
   ///
-  ///   @param a GgVector 型の変数.
-  ///   @param b GgVector 型の変数.
-  ///   @return a と b のそれぞれの 4 要素の内積.
+  /// GgVector 型の 4 要素の内積.
+  ///
+  /// @param a GgVector 型の変数.
+  /// @param b GgVector 型の変数.
+  /// @return a と b のそれぞれの 4 要素の内積.
   ///
   inline GLfloat ggDot4(const GgVector& a, const GgVector& b)
   {
     return ggDot4(a.data(), b.data());
   }
 
-  /// @brief GgVector 型の 4 要素の長さ.
   ///
-  ///   @param a GgVector 型の変数.
-  ///   @return a の 4 要素の長さ.
+  /// GgVector 型の 4 要素の長さ.
+  ///
+  /// @param a GgVector 型の変数.
+  /// @return a の 4 要素の長さ.
   ///
   inline GLfloat ggLength4(const GgVector& a)
   {
     return ggLength4(a.data());
   }
 
-  /// @brief GgVector 型の 4 要素の距離.
   ///
-  ///   @param a GgVector 型の変数.
-  ///   @param b GgVector 型の変数.
-  ///   @return 2 つの GgVector a, b の距離.
+  /// GgVector 型の 4 要素の距離.
+  ///
+  /// @param a GgVector 型の変数.
+  /// @param b GgVector 型の変数.
+  /// @return 2 つの GgVector a, b の距離.
   ///
   inline GLfloat ggDistance4(const GgVector& a, const GgVector& b)
   {
     return ggDistance4(a.data(), b.data());
   }
 
-  /// @brief GgVector 型の 4 要素の正規化.
   ///
-  ///   @param a GgVector 型の変数.
-  ///   @return a の 4 要素を正規化した結果.
+  /// GgVector 型の 4 要素の正規化.
+  ///
+  /// @param a GgVector 型の変数.
+  /// @return a の 4 要素を正規化した結果.
   ///
   inline GgVector ggNormalize4(const GgVector& a)
   {
@@ -2018,16 +2109,18 @@ namespace gg
     return b;
   }
 
-  /// @brief GgVector 型の 4 要素の正規化.
   ///
-  ///   @param a GLfloat 型の 4 要素の配列変数.
+  /// GgVector 型の 4 要素の正規化.
+  ///
+  /// @param a GLfloat 型の 4 要素の配列変数.
   ///
   inline void ggNormalize4(GgVector* a)
   {
     ggNormalize4(a->data());
   }
 
-  /// @brief 変換行列.
+  ///
+  /// 変換行列.
   ///
   class GgMatrix : public std::array<GLfloat, 16>
   {
@@ -2039,161 +2132,175 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
+    ///
+    /// コンストラクタ.
     ///
     GgMatrix()
     {
     }
 
-    /// @brief コンストラクタ.
     ///
-    ///   @param m00 GLfloat 型の値.
-    ///   @param m01 GLfloat 型の値.
-    ///   @param m02 GLfloat 型の値.
-    ///   @param m03 GLfloat 型の値.
-    ///   @param m10 GLfloat 型の値.
-    ///   @param m11 GLfloat 型の値.
-    ///   @param m12 GLfloat 型の値.
-    ///   @param m13 GLfloat 型の値.
-    ///   @param m20 GLfloat 型の値.
-    ///   @param m21 GLfloat 型の値.
-    ///   @param m22 GLfloat 型の値.
-    ///   @param m23 GLfloat 型の値.
-    ///   @param m30 GLfloat 型の値.
-    ///   @param m31 GLfloat 型の値.
-    ///   @param m32 GLfloat 型の値.
-    ///   @param m33 GLfloat 型の値.
+    /// コンストラクタ.
+    ///
+    /// @param m00 GLfloat 型の値.
+    /// @param m01 GLfloat 型の値.
+    /// @param m02 GLfloat 型の値.
+    /// @param m03 GLfloat 型の値.
+    /// @param m10 GLfloat 型の値.
+    /// @param m11 GLfloat 型の値.
+    /// @param m12 GLfloat 型の値.
+    /// @param m13 GLfloat 型の値.
+    /// @param m20 GLfloat 型の値.
+    /// @param m21 GLfloat 型の値.
+    /// @param m22 GLfloat 型の値.
+    /// @param m23 GLfloat 型の値.
+    /// @param m30 GLfloat 型の値.
+    /// @param m31 GLfloat 型の値.
+    /// @param m32 GLfloat 型の値.
+    /// @param m33 GLfloat 型の値.
     ///
     constexpr GgMatrix(
       GLfloat m00, GLfloat m01, GLfloat m02, GLfloat m03,
       GLfloat m10, GLfloat m11, GLfloat m12, GLfloat m13,
       GLfloat m20, GLfloat m21, GLfloat m22, GLfloat m23,
       GLfloat m30, GLfloat m31, GLfloat m32, GLfloat m33
-    )
-      : std::array<GLfloat, 16>{ m00, m10, m20, m30, m01, m11, m21, m31, m02, m12, m22, m32, m03, m13, m23, m33 }
+    ) :
+      std::array<GLfloat, 16>{ m00, m10, m20, m30, m01, m11, m21, m31, m02, m12, m22, m32, m03, m13, m23, m33 }
     {
     }
 
-    /// @brief コンストラクタ.
     ///
-    ///   @param c GLfloat 型の値.
+    /// コンストラクタ.
     ///
-    constexpr GgMatrix(GLfloat c)
-      : GgMatrix{ c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c }
+    /// @param c GLfloat 型の値.
+    ///
+    constexpr GgMatrix(GLfloat c) :
+      GgMatrix{ c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c }
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param a GLfloat 型の 16 要素の配列変数.
-    /// 
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param a GLfloat 型の 16 要素の配列変数.
+    ///
     GgMatrix(const GLfloat* a)
     {
       operator=(a);
     }
 
-    /// @brief 配列変数の値を格納する.
-    /// 
-    ///   @param a GLfloat 型の 16 要素の配列変数.
-    ///   @return a を代入したこのオブジェクトの参照.
-    /// 
+    ///
+    /// 配列変数の値を格納する.
+    ///
+    /// @param a GLfloat 型の 16 要素の配列変数.
+    /// @return a を代入したこのオブジェクトの参照.
+    ///
     GgMatrix& operator=(const GLfloat* a)
     {
       std::copy(a, a + size(), data());
       return *this;
     }
 
-    /// @brief 変換行列に配列に格納した変換行列を加算した値を返す.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return 変換行列に a を加えた GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列に配列に格納した変換行列を加算した値を返す.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return 変換行列に a を加えた GgMatrix 型の変換行列.
+    ///
     GgMatrix operator+(const GLfloat* a) const
     {
       GgMatrix t;
-      for (std::size_t i = 0; i < size(); ++i) t[i] = data()[i] + a[i];
+      for (size_t i = 0; i < size(); ++i) t[i] = data()[i] + a[i];
       return t;
     }
 
-    /// @brief 変換行列に別の変換行列を加算した値を返す.
-    /// 
-    ///   @param a GgMatrix 型の変換行列.
-    ///   @return 変換行列に a を加えた GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列に別の変換行列を加算した値を返す.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 変換行列に a を加えた GgMatrix 型の変換行列.
+    ///
     GgMatrix operator+(const GgMatrix& m) const
     {
       return operator+(m.data());
     }
 
-    /// @brief 変換行列に配列に格納した変換行列を加算した結果を格納する.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return a を加えた変換行列の参照.
-    /// 
+    ///
+    /// 変換行列に配列に格納した変換行列を加算した結果を格納する.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return a を加えた変換行列の参照.
+    ///
     GgMatrix& operator+=(const GLfloat* a)
     {
-      for (std::size_t i = 0; i < size(); ++i) data()[i] += a[i];
+      for (size_t i = 0; i < size(); ++i) data()[i] += a[i];
       return *this;
     }
 
-    /// @brief 変換行列に別の変換行列を加算した結果を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return m を加えた変換行列の参照.
-    /// 
+    ///
+    /// 変換行列に別の変換行列を加算した結果を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return m を加えた変換行列の参照.
+    ///
     GgMatrix& operator+=(const GgMatrix& m)
     {
       return operator+=(m.data());
     }
 
-    /// @brief 変換行列から配列に格納した変換行列を減算した結果を格納する.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return 変換行列から a を引いた GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列から配列に格納した変換行列を減算した結果を格納する.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return 変換行列から a を引いた GgMatrix 型の変換行列.
+    ///
     GgMatrix operator-(const GLfloat* a) const
     {
       GgMatrix t;
-      for (std::size_t i = 0; i < size(); ++i) t[i] = data()[i] - a[i];
+      for (size_t i = 0; i < size(); ++i) t[i] = data()[i] - a[i];
       return t;
     }
 
-    /// @brief 変換行列から別の変換行列を減算した値を返す.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return 変換行列から m を引いた GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列から別の変換行列を減算した値を返す.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 変換行列から m を引いた GgMatrix 型の変換行列.
+    ///
     GgMatrix operator-(const GgMatrix& m) const
     {
       return operator-(m.data());
     }
 
-    /// @brief 変換行列に配列に格納した変換行列を減算した結果を格納する.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return a を引いた変換行列の参照.
-    /// 
+    ///
+    /// 変換行列に配列に格納した変換行列を減算した結果を格納する.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return a を引いた変換行列の参照.
+    ///
     GgMatrix& operator-=(const GLfloat* a)
     {
-      for (std::size_t i = 0; i < size(); ++i) data()[i] -= a[i];
+      for (size_t i = 0; i < size(); ++i) data()[i] -= a[i];
       return *this;
     }
 
-    /// @brief 変換行列に別の変換行列を減算した結果を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return m を引いた変換行列の参照.
-    /// 
+    ///
+    /// 変換行列に別の変換行列を減算した結果を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return m を引いた変換行列の参照.
+    ///
     GgMatrix& operator-=(const GgMatrix& m)
     {
       return operator-=(m.data());
     }
 
-    /// @brief 変換行列に配列に格納した変換行列を乗算した値を返す.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return 変換行列に a を乗じた GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列に配列に格納した変換行列を乗算した値を返す.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return 変換行列に a を乗じた GgMatrix 型の変換行列.
+    ///
     GgMatrix operator*(const GLfloat* a) const
     {
       GgMatrix t;
@@ -2201,42 +2308,46 @@ namespace gg
       return t;
     }
 
-    /// @brief 変換行列に別の変換行列を乗算した値を返す.
-    /// 
-    ///   @param a GgMatrix 型の変換行列.
-    ///   @return 変換行列に a を乗じた GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列に別の変換行列を乗算した値を返す.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 変換行列に a を乗じた GgMatrix 型の変換行列.
+    ///
     GgMatrix operator*(const GgMatrix& m) const
     {
       return operator*(m.data());
     }
 
-    /// @brief 変換行列に配列に格納した変換行列を乗算した結果を格納する.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return a を掛けた変換行列の参照.
-    /// 
+    ///
+    /// 変換行列に配列に格納した変換行列を乗算した結果を格納する.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return a を掛けた変換行列の参照.
+    ///
     GgMatrix& operator*=(const GLfloat* a)
     {
       *this = operator*(a);
       return *this;
     }
 
-    /// @brief 変換行列に別の変換行列を乗算した結果を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return m を掛けた変換行列の参照.
-    /// 
+    ///
+    /// 変換行列に別の変換行列を乗算した結果を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return m を掛けた変換行列の参照.
+    ///
     GgMatrix& operator*=(const GgMatrix& m)
     {
       return operator*=(m.data());
     }
 
-    /// @brief 変換行列を配列に格納した変換行列で除算した値を返す.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return 変換行列を a で割った GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列を配列に格納した変換行列で除算した値を返す.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return 変換行列を a で割った GgMatrix 型の変換行列.
+    ///
     GgMatrix operator/(const GLfloat* a) const
     {
       GgMatrix i, t;
@@ -2245,475 +2356,520 @@ namespace gg
       return t;
     }
 
-    /// @brief 変換行列を変換行列で除算した値を返す.
-    /// 
-    ///   @param a GgMatrix 型の変換行列.
-    ///   @return 変換行列を a で割った GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 変換行列を変換行列で除算した値を返す.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 変換行列を a で割った GgMatrix 型の変換行列.
+    ///
     GgMatrix operator/(const GgMatrix& m) const
     {
       return operator/(m.data());
     }
 
-    /// @brief 変換行列を配列に格納した変換行列で除算した結果を格納する.
-    /// 
-    ///   @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    ///   @return a で割った変換行列の参照.
-    /// 
+    ///
+    /// 変換行列を配列に格納した変換行列で除算した結果を格納する.
+    ///
+    /// @param a 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    /// @return a で割った変換行列の参照.
+    ///
     GgMatrix& operator/=(const GLfloat* a)
     {
       *this = operator/(a);
       return *this;
     }
 
-    /// @brief 変換行列を別の変換行列で除算した結果を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return m で割った変換行列の参照.
-    /// 
+    ///
+    /// 変換行列を別の変換行列で除算した結果を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return m で割った変換行列の参照.
+    ///
     GgMatrix& operator/=(const GgMatrix& m)
     {
       return operator/=(m.data());
     }
 
-    /// @brief 単位行列を格納する.
+    ///
+    /// 単位行列を格納する.
     ///
     GgMatrix& loadIdentity();
 
-    /// @brief 平行移動の変換行列を格納する.
-    /// 
-    ///   @param x x 方向の移動量.
-    ///   @param y y 方向の移動量.
-    ///   @param z z 方向の移動量.
-    ///   @param w w 移動量のスケールファクタ (= 1.0f).
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// 平行移動の変換行列を格納する.
+    ///
+    /// @param x x 方向の移動量.
+    /// @param y y 方向の移動量.
+    /// @param z z 方向の移動量.
+    /// @param w w 移動量のスケールファクタ (= 1.0f).
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadTranslate(GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f);
 
-    /// @brief 平行移動の変換行列を格納する.
-    /// 
-    ///   @param t 移動量の GLfloat 型の配列 (x, y, z).
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// 平行移動の変換行列を格納する.
+    ///
+    /// @param t 移動量の GLfloat 型の配列 (x, y, z).
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadTranslate(const GLfloat* t)
     {
       return loadTranslate(t[0], t[1], t[2]);
     }
 
-    /// @brief 平行移動の変換行列を格納する.
-    /// 
-    ///   @param t 移動量の GgVector 型の変数.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// 平行移動の変換行列を格納する.
+    ///
+    /// @param t 移動量の GgVector 型の変数.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadTranslate(const GgVector& t)
     {
       return loadTranslate(t[0], t[1], t[2], t[3]);
     }
 
-    /// @brief 拡大縮小の変換行列を格納する.
-    /// 
-    ///   @param x x 方向の拡大率.
-    ///   @param y y 方向の拡大率.
-    ///   @param z z 方向の拡大率.
-    ///   @param w w 拡大率のスケールファクタ (= 1.0f).
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// 拡大縮小の変換行列を格納する.
+    ///
+    /// @param x x 方向の拡大率.
+    /// @param y y 方向の拡大率.
+    /// @param z z 方向の拡大率.
+    /// @param w w 拡大率のスケールファクタ (= 1.0f).
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadScale(GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f);
 
-    /// @brief 拡大縮小の変換行列を格納する.
-    /// 
-    ///   @param s 拡大率の GLfloat 型の配列 (x, y, z).
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// 拡大縮小の変換行列を格納する.
+    ///
+    /// @param s 拡大率の GLfloat 型の配列 (x, y, z).
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadScale(const GLfloat* s)
     {
       return loadScale(s[0], s[1], s[2]);
     }
 
-    /// @brief 拡大縮小の変換行列を格納する.
-    /// 
-    ///   @param s 拡大率の GgVector 型の変数.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// 拡大縮小の変換行列を格納する.
+    ///
+    /// @param s 拡大率の GgVector 型の変数.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadScale(const GgVector& s)
     {
       return loadScale(s[0], s[1], s[2], s[3]);
     }
 
-    /// @brief x 軸中心の回転の変換行列を格納する.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// x 軸中心の回転の変換行列を格納する.
+    ///
+    /// @param a 回転角.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotateX(GLfloat a);
 
-    /// @brief y 軸中心の回転の変換行列を格納する.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// y 軸中心の回転の変換行列を格納する.
+    ///
+    /// @param a 回転角.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotateY(GLfloat a);
 
-    /// @brief z 軸中心の回転の変換行列を格納する.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// z 軸中心の回転の変換行列を格納する.
+    ///
+    /// @param a 回転角.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotateZ(GLfloat a);
 
-    /// @brief (x, y, z) 方向のベクトルを軸とする回転の変換行列を格納する.
-    /// 
-    ///   @param x 回転軸の x 成分.
-    ///   @param y 回転軸の y 成分.
-    ///   @param z 回転軸の z 成分.
-    ///   @param a 回転角.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// (x, y, z) 方向のベクトルを軸とする回転の変換行列を格納する.
+    ///
+    /// @param x 回転軸の x 成分.
+    /// @param y 回転軸の y 成分.
+    /// @param z 回転軸の z 成分.
+    /// @param a 回転角.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotate(GLfloat x, GLfloat y, GLfloat z, GLfloat a);
 
-    /// @brief r 方向のベクトルを軸とする回転の変換行列を格納する.
-    /// 
-    ///   @param r 回転軸の方向ベクトルを格納した GLfloat 型の 3 要素の配列変数 (x, y, z).
-    ///   @param a 回転角.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転の変換行列を格納する.
+    ///
+    /// @param r 回転軸の方向ベクトルを格納した GLfloat 型の 3 要素の配列変数 (x, y, z).
+    /// @param a 回転角.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotate(const GLfloat* r, GLfloat a)
     {
       return loadRotate(r[0], r[1], r[2], a);
     }
 
-    /// @brief r 方向のベクトルを軸とする回転の変換行列を格納する.
-    /// 
-    ///   @param r 回転軸の方向ベクトルを格納した GgVector 型のベクトル, 第 4 要素は無視する.
-    ///   @param a 回転角.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転の変換行列を格納する.
+    ///
+    /// @param r 回転軸の方向ベクトルを格納した GgVector 型のベクトル, 第 4 要素は無視する.
+    /// @param a 回転角.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotate(const GgVector& r, GLfloat a)
     {
       return loadRotate(r[0], r[1], r[2], a);
     }
 
-    /// @brief r 方向のベクトルを軸とする回転の変換行列を格納する.
-    /// 
-    ///   @param r 回転軸の方向ベクトルと回転角を格納した GLfloat 型の 4 要素の配列変数, 第 4 要素を回転角に用いる.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転の変換行列を格納する.
+    ///
+    /// @param r 回転軸の方向ベクトルと回転角を格納した GLfloat 型の 4 要素の配列変数, 第 4 要素を回転角に用いる.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotate(const GLfloat* r)
     {
       return loadRotate(r[0], r[1], r[2], r[3]);
     }
 
-    /// @brief r 方向のベクトルを軸とする回転の変換行列を格納する.
-    /// 
-    ///   @param r 回転軸の方向ベクトルと回転角を格納した GgVector 型のベクトル, 第 4 要素を回転角に用いる.
-    ///   @return 設定した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転の変換行列を格納する.
+    ///
+    /// @param r 回転軸の方向ベクトルと回転角を格納した GgVector 型のベクトル, 第 4 要素を回転角に用いる.
+    /// @return 設定した変換行列.
+    ///
     GgMatrix& loadRotate(const GgVector& r)
     {
       return loadRotate(r[0], r[1], r[2], r[3]);
     }
 
-    /// @brief ビュー変換行列を格納する.
-    /// 
-    ///   @param ex 視点の位置の x 座標値.
-    ///   @param ey 視点の位置の y 座標値.
-    ///   @param ez 視点の位置の z 座標値.
-    ///   @param tx 目標点の位置の x 座標値.
-    ///   @param ty 目標点の位置の y 座標値.
-    ///   @param tz 目標点の位置の z 座標値.
-    ///   @param ux 上方向のベクトルの x 成分.
-    ///   @param uy 上方向のベクトルの y 成分.
-    ///   @param uz 上方向のベクトルの z 成分.
-    ///   @return 設定したビュー変換行列.
-    /// 
+    ///
+    /// ビュー変換行列を格納する.
+    ///
+    /// @param ex 視点の位置の x 座標値.
+    /// @param ey 視点の位置の y 座標値.
+    /// @param ez 視点の位置の z 座標値.
+    /// @param tx 目標点の位置の x 座標値.
+    /// @param ty 目標点の位置の y 座標値.
+    /// @param tz 目標点の位置の z 座標値.
+    /// @param ux 上方向のベクトルの x 成分.
+    /// @param uy 上方向のベクトルの y 成分.
+    /// @param uz 上方向のベクトルの z 成分.
+    /// @return 設定したビュー変換行列.
+    ///
     GgMatrix& loadLookat(GLfloat ex, GLfloat ey, GLfloat ez,
       GLfloat tx, GLfloat ty, GLfloat tz,
       GLfloat ux, GLfloat uy, GLfloat uz);
 
-    /// @brief ビュー変換行列を格納する.
-    /// 
-    ///   @param e 視点の位置の配列変数.
-    ///   @param t 目標点の位置の配列変数.
-    ///   @param u 上方向のベクトルの配列変数.
-    ///   @return 設定したビュー変換行列.
-    /// 
+    ///
+    /// ビュー変換行列を格納する.
+    ///
+    /// @param e 視点の位置の配列変数.
+    /// @param t 目標点の位置の配列変数.
+    /// @param u 上方向のベクトルの配列変数.
+    /// @return 設定したビュー変換行列.
+    ///
     GgMatrix& loadLookat(const GLfloat* e, const GLfloat* t, const GLfloat* u)
     {
       return loadLookat(e[0], e[1], e[2], t[0], t[1], t[2], u[0], u[1], u[2]);
     }
 
-    /// @brief ビュー変換行列を格納する.
-    /// 
-    ///   @param e 視点の位置の GgVector 型の変数.
-    ///   @param t 目標点の位置の GgVector 型の変数.
-    ///   @param u 上方向のベクトルの GgVector 型の変数.
-    ///   @return 設定したビュー変換行列.
-    /// 
+    ///
+    /// ビュー変換行列を格納する.
+    ///
+    /// @param e 視点の位置の GgVector 型の変数.
+    /// @param t 目標点の位置の GgVector 型の変数.
+    /// @param u 上方向のベクトルの GgVector 型の変数.
+    /// @return 設定したビュー変換行列.
+    ///
     GgMatrix& loadLookat(const GgVector& e, const GgVector& t, const GgVector& u)
     {
       return loadLookat(e[0], e[1], e[2], t[0], t[1], t[2], u[0], u[1], u[2]);
     }
 
-    /// @brief 直交投影変換行列を格納する.
-    /// 
-    ///   @param left ウィンドウの左端の位置.
-    ///   @param right ウィンドウの右端の位置.
-    ///   @param bottom ウィンドウの下端の位置.
-    ///   @param top ウィンドウの上端の位置.
-    ///   @param zNear 視点から前方面までの位置.
-    ///   @param zFar 視点から後方面までの位置.
-    ///   @return 設定した直交投影変換行列.
-    /// 
+    ///
+    /// 直交投影変換行列を格納する.
+    ///
+    /// @param left ウィンドウの左端の位置.
+    /// @param right ウィンドウの右端の位置.
+    /// @param bottom ウィンドウの下端の位置.
+    /// @param top ウィンドウの上端の位置.
+    /// @param zNear 視点から前方面までの位置.
+    /// @param zFar 視点から後方面までの位置.
+    /// @return 設定した直交投影変換行列.
+    ///
     GgMatrix& loadOrthogonal(GLfloat left, GLfloat right,
       GLfloat bottom, GLfloat top,
       GLfloat zNear, GLfloat zFar);
 
-    /// @brief 透視透視投影変換行列を格納する.
-    /// 
-    ///   @param left ウィンドウの左端の位置.
-    ///   @param right ウィンドウの右端の位置.
-    ///   @param bottom ウィンドウの下端の位置.
-    ///   @param top ウィンドウの上端の位置.
-    ///   @param zNear 視点から前方面までの位置.
-    ///   @param zFar 視点から後方面までの位置.
-    ///   @return 設定した透視投影変換行列.
-    /// 
+    ///
+    /// 透視透視投影変換行列を格納する.
+    ///
+    /// @param left ウィンドウの左端の位置.
+    /// @param right ウィンドウの右端の位置.
+    /// @param bottom ウィンドウの下端の位置.
+    /// @param top ウィンドウの上端の位置.
+    /// @param zNear 視点から前方面までの位置.
+    /// @param zFar 視点から後方面までの位置.
+    /// @return 設定した透視投影変換行列.
+    ///
     GgMatrix& loadFrustum(GLfloat left, GLfloat right,
       GLfloat bottom, GLfloat top,
       GLfloat zNear, GLfloat zFar);
 
-    /// @brief 画角を指定して透視投影変換行列を格納する.
-    /// 
-    ///   @param fovy y 方向の画角.
-    ///   @param aspect 縦横比.
-    ///   @param zNear 視点から前方面までの位置.
-    ///   @param zFar 視点から後方面までの位置.
-    ///   @return 設定した透視投影変換行列.
-    /// 
+    ///
+    /// 画角を指定して透視投影変換行列を格納する.
+    ///
+    /// @param fovy y 方向の画角.
+    /// @param aspect 縦横比.
+    /// @param zNear 視点から前方面までの位置.
+    /// @param zFar 視点から後方面までの位置.
+    /// @return 設定した透視投影変換行列.
+    ///
     GgMatrix& loadPerspective(GLfloat fovy, GLfloat aspect,
       GLfloat zNear, GLfloat zFar);
 
-    /// @brief 転置行列を格納する.
-    /// 
-    ///   @param a GLfloat 型の 16 要素の変換行列.
-    ///   @return 設定した a の転置行列.
-    /// 
+    ///
+    /// 転置行列を格納する.
+    ///
+    /// @param a GLfloat 型の 16 要素の変換行列.
+    /// @return 設定した a の転置行列.
+    ///
     GgMatrix& loadTranspose(const GLfloat* a);
 
-    /// @brief 転置行列を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return 設定した m の転置行列.
-    /// 
+    ///
+    /// 転置行列を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 設定した m の転置行列.
+    ///
     GgMatrix& loadTranspose(const GgMatrix& m)
     {
       return loadTranspose(m.data());
     }
 
-    /// @brief 逆行列を格納する.
-    /// 
-    ///   @param a GLfloat 型の 16 要素の変換行列.
-    ///   @return 設定した a の逆行列.
-    /// 
+    ///
+    /// 逆行列を格納する.
+    ///
+    /// @param a GLfloat 型の 16 要素の変換行列.
+    /// @return 設定した a の逆行列.
+    ///
     GgMatrix& loadInvert(const GLfloat* a);
 
-    /// @brief 逆行列を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return 設定した m の逆行列.
-    /// 
+    ///
+    /// 逆行列を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 設定した m の逆行列.
+    ///
     GgMatrix& loadInvert(const GgMatrix& m)
     {
       return loadInvert(m.data());
     }
 
-    /// @brief 法線変換行列を格納する.
-    /// 
-    ///   @param a GLfloat 型の 16 要素の変換行列.
-    ///   @return 設定した m の法線変換行列.
-    /// 
+    ///
+    /// 法線変換行列を格納する.
+    ///
+    /// @param a GLfloat 型の 16 要素の変換行列.
+    /// @return 設定した m の法線変換行列.
+    ///
     GgMatrix& loadNormal(const GLfloat* a);
 
-    /// @brief 法線変換行列を格納する.
-    /// 
-    ///   @param m GgMatrix 型の変換行列.
-    ///   @return 設定した m の法線変換行列.
-    /// 
+    ///
+    /// 法線変換行列を格納する.
+    ///
+    /// @param m GgMatrix 型の変換行列.
+    /// @return 設定した m の法線変換行列.
+    ///
     GgMatrix& loadNormal(const GgMatrix& m)
     {
       return loadNormal(m.data());
     }
 
-    /// @brief 平行移動変換を乗じた結果を返す.
-    /// 
-    ///   @param x x 方向の移動量.
-    ///   @param y y 方向の移動量.
-    ///   @param z z 方向の移動量.
-    ///   @param w w 移動量のスケールファクタ (= 1.0f).
-    ///   @return 平行移動した結果の変換行列.
-    /// 
+    ///
+    /// 平行移動変換を乗じた結果を返す.
+    ///
+    /// @param x x 方向の移動量.
+    /// @param y y 方向の移動量.
+    /// @param z z 方向の移動量.
+    /// @param w w 移動量のスケールファクタ (= 1.0f).
+    /// @return 平行移動した結果の変換行列.
+    ///
     GgMatrix translate(GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f) const
     {
       GgMatrix m;
       return operator*(m.loadTranslate(x, y, z, w));
     }
 
-    /// @brief 平行移動変換を乗じた結果を返す.
-    /// 
-    ///   @param t 移動量の GLfloat 型の 3 要素の配列変数 (x, y, z).
-    ///   @return 平行移動した結果の変換行列.
-    /// 
+    ///
+    /// 平行移動変換を乗じた結果を返す.
+    ///
+    /// @param t 移動量の GLfloat 型の 3 要素の配列変数 (x, y, z).
+    /// @return 平行移動した結果の変換行列.
+    ///
     GgMatrix translate(const GLfloat* t) const
     {
       return translate(t[0], t[1], t[2]);
     }
 
-    /// @brief 平行移動変換を乗じた結果を返す.
-    /// 
-    ///   @param t 移動量の GgVector 型の変数.
-    ///   @return 平行移動した結果の変換行列.
-    /// 
+    ///
+    /// 平行移動変換を乗じた結果を返す.
+    ///
+    /// @param t 移動量の GgVector 型の変数.
+    /// @return 平行移動した結果の変換行列.
+    ///
     GgMatrix translate(const GgVector& t) const
     {
       return translate(t[0], t[1], t[2], t[3]);
     }
 
-    /// @brief 拡大縮小変換を乗じた結果を返す.
-    /// 
-    ///   @param x x 方向の拡大率.
-    ///   @param y y 方向の拡大率.
-    ///   @param z z 方向の拡大率.
-    ///   @param w w 移動量のスケールファクタ (= 1.0f).
-    ///   @return 拡大縮小した結果の変換行列.
-    /// 
+    ///
+    /// 拡大縮小変換を乗じた結果を返す.
+    ///
+    /// @param x x 方向の拡大率.
+    /// @param y y 方向の拡大率.
+    /// @param z z 方向の拡大率.
+    /// @param w w 移動量のスケールファクタ (= 1.0f).
+    /// @return 拡大縮小した結果の変換行列.
+    ///
     GgMatrix scale(GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f) const
     {
       GgMatrix m;
       return operator*(m.loadScale(x, y, z, w));
     }
 
-    /// @brief 拡大縮小変換を乗じた結果を返す.
-    /// 
-    ///   @param s 拡大率の GLfloat 型の 3 要素の配列変数 (x, y, z).
-    ///   @return 拡大縮小した結果の変換行列.
-    /// 
+    ///
+    /// 拡大縮小変換を乗じた結果を返す.
+    ///
+    /// @param s 拡大率の GLfloat 型の 3 要素の配列変数 (x, y, z).
+    /// @return 拡大縮小した結果の変換行列.
+    ///
     GgMatrix scale(const GLfloat* s) const
     {
       return scale(s[0], s[1], s[2]);
     }
 
-    /// @brief 拡大縮小変換を乗じた結果を返す.
-    /// 
-    ///   @param s 拡大率の GgVector 型の変数.
-    ///   @return 拡大縮小した結果の変換行列.
-    /// 
+    ///
+    /// 拡大縮小変換を乗じた結果を返す.
+    ///
+    /// @param s 拡大率の GgVector 型の変数.
+    /// @return 拡大縮小した結果の変換行列.
+    ///
     GgMatrix scale(const GgVector& s) const
     {
       return scale(s[0], s[1], s[2], s[3]);
     }
 
-    /// @brief x 軸中心の回転変換を乗じた結果を返す.
-    /// 
-    ///   @param a 回転角.
-    ///   @return x 軸中心にさらに a 回転した変換行列.
-    /// 
+    ///
+    /// x 軸中心の回転変換を乗じた結果を返す.
+    ///
+    /// @param a 回転角.
+    /// @return x 軸中心にさらに a 回転した変換行列.
+    ///
     GgMatrix rotateX(GLfloat a) const
     {
       GgMatrix m;
       return operator*(m.loadRotateX(a));
     }
 
-    /// @brief y 軸中心の回転変換を乗じた結果を返す.
-    /// 
-    ///   @param a 回転角.
-    ///   @return y 軸中心にさらに a 回転した変換行列.
-    /// 
+    ///
+    /// y 軸中心の回転変換を乗じた結果を返す.
+    ///
+    /// @param a 回転角.
+    /// @return y 軸中心にさらに a 回転した変換行列.
+    ///
     GgMatrix rotateY(GLfloat a) const
     {
       GgMatrix m;
       return operator*(m.loadRotateY(a));
     }
 
-    /// @brief z 軸中心の回転変換を乗じた結果を返す.
-    /// 
-    ///   @param a 回転角.
-    ///   @return z 軸中心にさらに a 回転した変換行列.
-    /// 
+    ///
+    /// z 軸中心の回転変換を乗じた結果を返す.
+    ///
+    /// @param a 回転角.
+    /// @return z 軸中心にさらに a 回転した変換行列.
+    ///
     GgMatrix rotateZ(GLfloat a) const
     {
       GgMatrix m;
       return operator*(m.loadRotateZ(a));
     }
 
-    /// @brief (x, y, z) 方向のベクトルを軸とする回転変換を乗じた結果を返す.
-    /// 
-    ///   @param x 回転軸の x 成分.
-    ///   @param y 回転軸の y 成分.
-    ///   @param z 回転軸の z 成分.
-    ///   @param a 回転角.
-    ///   @return (x, y, z) を軸にさらに a 回転した変換行列.
-    /// 
+    ///
+    /// (x, y, z) 方向のベクトルを軸とする回転変換を乗じた結果を返す.
+    ///
+    /// @param x 回転軸の x 成分.
+    /// @param y 回転軸の y 成分.
+    /// @param z 回転軸の z 成分.
+    /// @param a 回転角.
+    /// @return (x, y, z) を軸にさらに a 回転した変換行列.
+    ///
     GgMatrix rotate(GLfloat x, GLfloat y, GLfloat z, GLfloat a) const
     {
       GgMatrix m;
       return operator*(m.loadRotate(x, y, z, a));
     }
 
-    /// @brief r 方向のベクトルを軸とする回転変換を乗じた結果を返す.
-    /// 
-    ///   @param r 回転軸の方向ベクトルを格納した GLfloat 型の 3 要素の配列変数 (x, y, z).
-    ///   @param a 回転角.
-    ///   @return (r[0], r[1], r[2]) を軸にさらに a 回転した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転変換を乗じた結果を返す.
+    ///
+    /// @param r 回転軸の方向ベクトルを格納した GLfloat 型の 3 要素の配列変数 (x, y, z).
+    /// @param a 回転角.
+    /// @return (r[0], r[1], r[2]) を軸にさらに a 回転した変換行列.
+    ///
     GgMatrix rotate(const GLfloat* r, GLfloat a) const
     {
       return rotate(r[0], r[1], r[2], a);
     }
 
-    /// @brief r 方向のベクトルを軸とする回転変換を乗じた結果を返す.
-    /// 
-    ///   @param r 回転軸の方向ベクトルを格納した GgVector 型の変数.
-    ///   @param a 回転角.
-    ///   @return (r[0], r[1], r[2]) を軸にさらに a 回転した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転変換を乗じた結果を返す.
+    ///
+    /// @param r 回転軸の方向ベクトルを格納した GgVector 型の変数.
+    /// @param a 回転角.
+    /// @return (r[0], r[1], r[2]) を軸にさらに a 回転した変換行列.
+    ///
     GgMatrix rotate(const GgVector& r, GLfloat a) const
     {
       return rotate(r[0], r[1], r[2], a);
     }
 
-    /// @brief r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-    /// 
-    ///   @param r 回転軸の方向ベクトルと回転角を格納した GLfloat 型の 4 要素の配列変数 (x, y, z, a).
-    ///   @return (r[0], r[1], r[2]) を軸にさらに r[3] 回転した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+    ///
+    /// @param r 回転軸の方向ベクトルと回転角を格納した GLfloat 型の 4 要素の配列変数 (x, y, z, a).
+    /// @return (r[0], r[1], r[2]) を軸にさらに r[3] 回転した変換行列.
+    ///
     GgMatrix rotate(const GLfloat* r) const
     {
       return rotate(r[0], r[1], r[2], r[3]);
     }
 
-    /// @brief r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-    /// 
-    ///   @param r 回転軸の方向ベクトルと回転角を格納した GgVector 型の変数).
-    ///   @return (r[0], r[1], r[2]) を軸にさらに r[3] 回転した変換行列.
-    /// 
+    ///
+    /// r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+    ///
+    /// @param r 回転軸の方向ベクトルと回転角を格納した GgVector 型の変数).
+    /// @return (r[0], r[1], r[2]) を軸にさらに r[3] 回転した変換行列.
+    ///
     GgMatrix rotate(const GgVector& r) const
     {
       return rotate(r[0], r[1], r[2], r[3]);
     }
 
-    /// @brief ビュー変換を乗じた結果を返す.
-    /// 
-    ///   @param ex 視点の位置の x 座標値.
-    ///   @param ey 視点の位置の y 座標値.
-    ///   @param ez 視点の位置の z 座標値.
-    ///   @param tx 目標点の位置の x 座標値.
-    ///   @param ty 目標点の位置の y 座標値.
-    ///   @param tz 目標点の位置の z 座標値.
-    ///   @param ux 上方向のベクトルの x 成分.
-    ///   @param uy 上方向のベクトルの y 成分.
-    ///   @param uz 上方向のベクトルの z 成分.
-    ///   @return ビュー変換行列を乗じた変換行列.
-    /// 
+    ///
+    /// ビュー変換を乗じた結果を返す.
+    ///
+    /// @param ex 視点の位置の x 座標値.
+    /// @param ey 視点の位置の y 座標値.
+    /// @param ez 視点の位置の z 座標値.
+    /// @param tx 目標点の位置の x 座標値.
+    /// @param ty 目標点の位置の y 座標値.
+    /// @param tz 目標点の位置の z 座標値.
+    /// @param ux 上方向のベクトルの x 成分.
+    /// @param uy 上方向のベクトルの y 成分.
+    /// @param uz 上方向のベクトルの z 成分.
+    /// @return ビュー変換行列を乗じた変換行列.
+    ///
     GgMatrix lookat(
       GLfloat ex, GLfloat ey, GLfloat ez,
       GLfloat tx, GLfloat ty, GLfloat tz,
@@ -2724,40 +2880,43 @@ namespace gg
       return operator*(m.loadLookat(ex, ey, ez, tx, ty, tz, ux, uy, uz));
     }
 
-    /// @brief ビュー変換を乗じた結果を返す.
-    /// 
-    ///   @param e 視点の位置を格納した GLfloat 型の 3 要素の配列変数.
-    ///   @param t 目標点の位置を格納した GLfloat 型の 3 要素の配列変数.
-    ///   @param u 上方向のベクトルを格納した GLfloat 型の 3 要素の配列変数.
-    ///   @return ビュー変換行列を乗じた変換行列.
-    /// 
+    ///
+    /// ビュー変換を乗じた結果を返す.
+    ///
+    /// @param e 視点の位置を格納した GLfloat 型の 3 要素の配列変数.
+    /// @param t 目標点の位置を格納した GLfloat 型の 3 要素の配列変数.
+    /// @param u 上方向のベクトルを格納した GLfloat 型の 3 要素の配列変数.
+    /// @return ビュー変換行列を乗じた変換行列.
+    ///
     GgMatrix lookat(const GLfloat* e, const GLfloat* t, const GLfloat* u) const
     {
       return lookat(e[0], e[1], e[2], t[0], t[1], t[2], u[0], u[1], u[2]);
     }
 
-    /// @brief ビュー変換を乗じた結果を返す.
-    /// 
-    ///   @param e 視点の位置を格納した GgVector 型の変数.
-    ///   @param t 目標点の位置を格納した GgVector 型の変数.
-    ///   @param u 上方向のベクトルを格納した GgVector 型の変数.
-    ///   @return ビュー変換行列を乗じた変換行列.
-    /// 
+    ///
+    /// ビュー変換を乗じた結果を返す.
+    ///
+    /// @param e 視点の位置を格納した GgVector 型の変数.
+    /// @param t 目標点の位置を格納した GgVector 型の変数.
+    /// @param u 上方向のベクトルを格納した GgVector 型の変数.
+    /// @return ビュー変換行列を乗じた変換行列.
+    ///
     GgMatrix lookat(const GgVector& e, const GgVector& t, const GgVector& u) const
     {
       return lookat(e[0], e[1], e[2], t[0], t[1], t[2], u[0], u[1], u[2]);
     }
 
-    /// @brief 直交投影変換を乗じた結果を返す.
-    /// 
-    ///   @param left ウィンドウの左端の位置.
-    ///   @param right ウィンドウの右端の位置.
-    ///   @param bottom ウィンドウの下端の位置.
-    ///   @param top ウィンドウの上端の位置.
-    ///   @param zNear 視点から前方面までの位置.
-    ///   @param zFar 視点から後方面までの位置.
-    ///   @return 直交投影変換行列を乗じた変換行列.
-    /// 
+    ///
+    /// 直交投影変換を乗じた結果を返す.
+    ///
+    /// @param left ウィンドウの左端の位置.
+    /// @param right ウィンドウの右端の位置.
+    /// @param bottom ウィンドウの下端の位置.
+    /// @param top ウィンドウの上端の位置.
+    /// @param zNear 視点から前方面までの位置.
+    /// @param zFar 視点から後方面までの位置.
+    /// @return 直交投影変換行列を乗じた変換行列.
+    ///
     GgMatrix orthogonal(
       GLfloat left, GLfloat right,
       GLfloat bottom, GLfloat top,
@@ -2768,16 +2927,17 @@ namespace gg
       return operator*(m.loadOrthogonal(left, right, bottom, top, zNear, zFar));
     }
 
-    /// @brief 透視投影変換を乗じた結果を返す.
-    /// 
-    ///   @param left ウィンドウの左端の位置.
-    ///   @param right ウィンドウの右端の位置.
-    ///   @param bottom ウィンドウの下端の位置.
-    ///   @param top ウィンドウの上端の位置.
-    ///   @param zNear 視点から前方面までの位置.
-    ///   @param zFar 視点から後方面までの位置.
-    ///   @return 透視投影変換行列を乗じた変換行列.
-    /// 
+    ///
+    /// 透視投影変換を乗じた結果を返す.
+    ///
+    /// @param left ウィンドウの左端の位置.
+    /// @param right ウィンドウの右端の位置.
+    /// @param bottom ウィンドウの下端の位置.
+    /// @param top ウィンドウの上端の位置.
+    /// @param zNear 視点から前方面までの位置.
+    /// @param zFar 視点から後方面までの位置.
+    /// @return 透視投影変換行列を乗じた変換行列.
+    ///
     GgMatrix frustum(
       GLfloat left, GLfloat right,
       GLfloat bottom, GLfloat top,
@@ -2788,14 +2948,15 @@ namespace gg
       return operator*(m.loadFrustum(left, right, bottom, top, zNear, zFar));
     }
 
-    /// @brief 画角を指定して透視投影変換を乗じた結果を返す.
-    /// 
-    ///   @param fovy y 方向の画角.
-    ///   @param aspect 縦横比.
-    ///   @param zNear 視点から前方面までの位置.
-    ///   @param zFar 視点から後方面までの位置.
-    ///   @return 透視投影変換行列を乗じた変換行列.
-    /// 
+    ///
+    /// 画角を指定して透視投影変換を乗じた結果を返す.
+    ///
+    /// @param fovy y 方向の画角.
+    /// @param aspect 縦横比.
+    /// @param zNear 視点から前方面までの位置.
+    /// @param zFar 視点から後方面までの位置.
+    /// @return 透視投影変換行列を乗じた変換行列.
+    ///
     GgMatrix perspective(
       GLfloat fovy, GLfloat aspect,
       GLfloat zNear, GLfloat zFar
@@ -2805,81 +2966,89 @@ namespace gg
       return operator*(m.loadPerspective(fovy, aspect, zNear, zFar));
     }
 
-    /// @brief 転置行列を返す.
-    /// 
-    ///   @return 転置行列.
-    /// 
+    ///
+    /// 転置行列を返す.
+    ///
+    /// @return 転置行列.
+    ///
     GgMatrix transpose() const
     {
       GgMatrix t;
       return t.loadTranspose(*this);
     }
 
-    /// @brief 逆行列を返す.
-    /// 
-    ///   @return 逆行列.
-    /// 
+    ///
+    /// 逆行列を返す.
+    ///
+    /// @return 逆行列.
+    ///
     GgMatrix invert() const
     {
       GgMatrix t;
       return t.loadInvert(*this);
     }
 
-    /// @brief 法線変換行列を返す.
-    /// 
-    ///   @return 法線変換行列.
-    /// 
+    ///
+    /// 法線変換行列を返す.
+    ///
+    /// @return 法線変換行列.
+    ///
     GgMatrix normal() const
     {
       GgMatrix t;
       return t.loadNormal(*this);
     }
 
-    /// @brief ベクトルに対して投影変換を行う.
-    /// 
-    ///   @param c 変換結果を格納する GLfloat 型の 4 要素の配列変数.
-    ///   @param v 元のベクトルの GLfloat 型の 4 要素の配列変数.
-    /// 
+    ///
+    /// ベクトルに対して投影変換を行う.
+    ///
+    /// @param c 変換結果を格納する GLfloat 型の 4 要素の配列変数.
+    /// @param v 元のベクトルの GLfloat 型の 4 要素の配列変数.
+    ///
     void projection(GLfloat* c, const GLfloat* v) const
     {
       projection(c, data(), v);
     }
 
-    /// @brief ベクトルに対して投影変換を行う.
-    /// 
-    ///   @param c 変換結果を格納する GLfloat 型の 4 要素の配列変数.
-    ///   @param v 元のベクトルの GgVector 型の変数.
-    /// 
+    ///
+    /// ベクトルに対して投影変換を行う.
+    ///
+    /// @param c 変換結果を格納する GLfloat 型の 4 要素の配列変数.
+    /// @param v 元のベクトルの GgVector 型の変数.
+    ///
     void projection(GLfloat* c, const GgVector& v) const
     {
       projection(c, v.data());
     }
 
-    /// @brief ベクトルに対して投影変換を行う.
-    /// 
-    ///   @param c 変換結果を格納する GgVector 型の変数.
-    ///   @param v 元のベクトルの GLfloat 型の 4 要素の配列変数.
-    /// 
+    ///
+    /// ベクトルに対して投影変換を行う.
+    ///
+    /// @param c 変換結果を格納する GgVector 型の変数.
+    /// @param v 元のベクトルの GLfloat 型の 4 要素の配列変数.
+    ///
     void projection(GgVector& c, const GLfloat* v) const
     {
       projection(c.data(), v);
     }
 
-    /// @brief ベクトルに対して投影変換を行う.
-    /// 
-    ///   @param c 変換結果を格納する GgVector 型の変数.
-    ///   @param v 元のベクトルの GgVector 型の変数.
-    /// 
+    ///
+    /// ベクトルに対して投影変換を行う.
+    ///
+    /// @param c 変換結果を格納する GgVector 型の変数.
+    /// @param v 元のベクトルの GgVector 型の変数.
+    ///
     void projection(GgVector& c, const GgVector& v) const
     {
       projection(c.data(), v.data());
     }
 
-    /// @brief ベクトルに対して投影変換を行う.
-    /// 
-    ///   @param v 元のベクトルの GgVector 型の変数.
-    ///   @return v 変換結果の GgVector 型のベクトル.
-    /// 
+    ///
+    /// ベクトルに対して投影変換を行う.
+    ///
+    /// @param v 元のベクトルの GgVector 型の変数.
+    /// @return v 変換結果の GgVector 型のベクトル.
+    ///
     GgVector operator*(const GgVector& v) const
     {
       GgVector c;
@@ -2887,213 +3056,231 @@ namespace gg
       return c;
     }
 
-    /// @brief 変換行列を取り出す.
-    /// 
-    ///   @return 変換行列を格納した GLfloat 型の 16 要素の配列変数.
-    /// 
+    ///
+    /// 変換行列を取り出す.
+    ///
+    /// @return 変換行列を格納した GLfloat 型の 16 要素の配列変数.
+    ///
     const GLfloat* get() const
     {
       return data();
     }
 
-    /// @brief 変換行列を取り出す.
-    /// 
-    ///   @param a 変換行列を格納する GLfloat 型の 16 要素の配列変数.
-    /// 
+    ///
+    /// 変換行列を取り出す.
+    ///
+    /// @param a 変換行列を格納する GLfloat 型の 16 要素の配列変数.
+    ///
     void get(GLfloat* a) const
     {
       std::copy(data(), data() + size(), a);
     }
   };
 
-  /// @brief 単位行列を返す.
-  /// 
-  ///   @return 単位行列.
-  /// 
+  ///
+  /// 単位行列を返す.
+  ///
+  /// @return 単位行列.
+  ///
   inline GgMatrix ggIdentity()
   {
     GgMatrix t;
     return t.loadIdentity();
   };
 
-  /// @brief 平行移動の変換行列を返す.
-  /// 
-  ///   @param x x 方向の移動量.
-  ///   @param y y 方向の移動量.
-  ///   @param z z 方向の移動量.
-  ///   @param w 移動量のスケールファクタ (= 1.0f).
-  ///   @return 平行移動の変換行列.
-  /// 
+  ///
+  /// 平行移動の変換行列を返す.
+  ///
+  /// @param x x 方向の移動量.
+  /// @param y y 方向の移動量.
+  /// @param z z 方向の移動量.
+  /// @param w 移動量のスケールファクタ (= 1.0f).
+  /// @return 平行移動の変換行列.
+  ///
   inline GgMatrix ggTranslate(GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f)
   {
     GgMatrix m;
     return m.loadTranslate(x, y, z, w);
   }
 
-  /// @brief 平行移動の変換行列を返す.
-  /// 
-  ///   @param t 移動量の GLfloat 型の 3 要素の配列変数 (x, y, z).
-  ///   @return 平行移動の変換行列.
-  /// 
+  ///
+  /// 平行移動の変換行列を返す.
+  ///
+  /// @param t 移動量の GLfloat 型の 3 要素の配列変数 (x, y, z).
+  /// @return 平行移動の変換行列.
+  ///
   inline GgMatrix ggTranslate(const GLfloat* t)
   {
     GgMatrix m;
     return m.loadTranslate(t[0], t[1], t[2]);
   }
 
-  /// @brief 平行移動の変換行列を返す.
-  /// 
-  ///   @param t 移動量の GgVector 型の変数.
-  ///   @return 平行移動の変換行列.
-  /// 
+  ///
+  /// 平行移動の変換行列を返す.
+  ///
+  /// @param t 移動量の GgVector 型の変数.
+  /// @return 平行移動の変換行列.
+  ///
   inline GgMatrix ggTranslate(const GgVector& t)
   {
     GgMatrix m;
     return m.loadTranslate(t[0], t[1], t[2], t[3]);
   }
 
-  /// @brief 拡大縮小の変換行列を返す.
-  /// 
-  ///   @param x x 方向の拡大率.
-  ///   @param y y 方向の拡大率.
-  ///   @param z z 方向の拡大率.
-  ///   @param w 拡大率のスケールファクタ (= 1.0f).
-  ///   @return 拡大縮小の変換行列.
-  /// 
+  ///
+  /// 拡大縮小の変換行列を返す.
+  ///
+  /// @param x x 方向の拡大率.
+  /// @param y y 方向の拡大率.
+  /// @param z z 方向の拡大率.
+  /// @param w 拡大率のスケールファクタ (= 1.0f).
+  /// @return 拡大縮小の変換行列.
+  ///
   inline GgMatrix ggScale(GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f)
   {
     GgMatrix m;
     return m.loadScale(x, y, z, w);
   }
 
-  /// @brief 拡大縮小の変換行列を返す.
-  /// 
-  ///   @param s 拡大率の GLfloat 型の 3 要素の配列変数 (x, y, z).
-  ///   @return 拡大縮小の変換行列.
-  /// 
+  ///
+  /// 拡大縮小の変換行列を返す.
+  ///
+  /// @param s 拡大率の GLfloat 型の 3 要素の配列変数 (x, y, z).
+  /// @return 拡大縮小の変換行列.
+  ///
   inline GgMatrix ggScale(const GLfloat* s)
   {
     GgMatrix m;
     return m.loadScale(s[0], s[1], s[2]);
   }
 
-  /// @brief 拡大縮小の変換行列を返す.
-  /// 
-  ///   @param s 拡大率の GgVector 型の変数.
-  ///   @return 拡大縮小の変換行列.
-  /// 
+  ///
+  /// 拡大縮小の変換行列を返す.
+  ///
+  /// @param s 拡大率の GgVector 型の変数.
+  /// @return 拡大縮小の変換行列.
+  ///
   inline GgMatrix ggScale(const GgVector& s)
   {
     GgMatrix m;
     return m.loadScale(s[0], s[1], s[2], s[3]);
   }
 
-  /// @brief x 軸中心の回転の変換行列を返す.
-  /// 
-  ///   @param a 回転角.
-  ///   @return x 軸中心に a だけ回転する変換行列.
-  /// 
+  ///
+  /// x 軸中心の回転の変換行列を返す.
+  ///
+  /// @param a 回転角.
+  /// @return x 軸中心に a だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotateX(GLfloat a)
   {
     GgMatrix m;
     return m.loadRotateX(a);
   }
 
-  /// @brief y 軸中心の回転の変換行列を返す.
-  /// 
-  ///   @param a 回転角.
-  ///   @return y 軸中心に a だけ回転する変換行列.
-  /// 
+  ///
+  /// y 軸中心の回転の変換行列を返す.
+  ///
+  /// @param a 回転角.
+  /// @return y 軸中心に a だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotateY(GLfloat a)
   {
     GgMatrix m;
     return m.loadRotateY(a);
   }
 
-  /// @brief z 軸中心の回転の変換行列を返す.
-  /// 
-  ///   @param a 回転角.
-  ///   @return z 軸中心に a だけ回転する変換行列.
-  /// 
+  ///
+  /// z 軸中心の回転の変換行列を返す.
+  ///
+  /// @param a 回転角.
+  /// @return z 軸中心に a だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotateZ(GLfloat a)
   {
     GgMatrix m;
     return m.loadRotateZ(a);
   }
 
-  /// @brief (x, y, z) 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-  /// 
-  ///   @param x 回転軸の x 成分.
-  ///   @param y 回転軸の y 成分.
-  ///   @param z 回転軸の z 成分.
-  ///   @param a 回転角.
-  ///   @return (x, y, z) を軸にさらに a 回転する変換行列.
-  /// 
+  ///
+  /// (x, y, z) 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+  ///
+  /// @param x 回転軸の x 成分.
+  /// @param y 回転軸の y 成分.
+  /// @param z 回転軸の z 成分.
+  /// @param a 回転角.
+  /// @return (x, y, z) を軸にさらに a 回転する変換行列.
+  ///
   inline GgMatrix ggRotate(GLfloat x, GLfloat y, GLfloat z, GLfloat a)
   {
     GgMatrix m;
     return m.loadRotate(x, y, z, a);
   }
 
-  /// @brief r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-  /// 
-  ///   @param r 回転軸のベクトルを表す GLfloat 型の 3 要素の配列変数.
-  ///   @param a 回転角.
-  ///   @return r を軸に a だけ回転する変換行列.
-  /// 
+  ///
+  /// r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+  ///
+  /// @param r 回転軸のベクトルを表す GLfloat 型の 3 要素の配列変数.
+  /// @param a 回転角.
+  /// @return r を軸に a だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotate(const GLfloat* r, GLfloat a)
   {
     GgMatrix m;
     return m.loadRotate(r[0], r[1], r[2], a);
   }
 
-  /// @brief r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-  /// 
-  ///   @param r 回転軸のベクトルを表す GgVector 型の変数.
-  ///   @param a 回転角.
-  ///   @return r を軸に a だけ回転する変換行列.
-  /// 
+  ///
+  /// r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+  ///
+  /// @param r 回転軸のベクトルを表す GgVector 型の変数.
+  /// @param a 回転角.
+  /// @return r を軸に a だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotate(const GgVector& r, GLfloat a)
   {
     GgMatrix m;
     return m.loadRotate(r[0], r[1], r[2], a);
   }
 
-  /// @brief r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-  /// 
-  ///   @param r 回転軸のベクトルと回転角を表す GLfloat 型の 4 要素の配列変数.
-  ///   @return (r[0], r[1], r[2]) を軸に r[3] だけ回転する変換行列.
-  /// 
+  ///
+  /// r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+  ///
+  /// @param r 回転軸のベクトルと回転角を表す GLfloat 型の 4 要素の配列変数.
+  /// @return (r[0], r[1], r[2]) を軸に r[3] だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotate(const GLfloat* r)
   {
     GgMatrix m;
     return m.loadRotate(r[0], r[1], r[2], r[3]);
   }
 
-  /// @brief r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
-  /// 
-  ///   @param r 回転軸のベクトルと回転角を表す GgVector 型の変数.
-  ///   @return (r[0], r[1], r[2]) を軸に r[3] だけ回転する変換行列.
-  /// 
+  ///
+  /// r 方向のベクトルを軸とする回転の変換行列を乗じた結果を返す.
+  ///
+  /// @param r 回転軸のベクトルと回転角を表す GgVector 型の変数.
+  /// @return (r[0], r[1], r[2]) を軸に r[3] だけ回転する変換行列.
+  ///
   inline GgMatrix ggRotate(const GgVector& r)
   {
     GgMatrix m;
     return m.loadRotate(r[0], r[1], r[2], r[3]);
   }
 
-  /// @brief ビュー変換行列を返す.
-  /// 
-  ///   @param ex 視点の位置の x 座標値.
-  ///   @param ey 視点の位置の y 座標値.
-  ///   @param ez 視点の位置の z 座標値.
-  ///   @param tx 目標点の位置の x 座標値.
-  ///   @param ty 目標点の位置の y 座標値.
-  ///   @param tz 目標点の位置の z 座標値.
-  ///   @param ux 上方向のベクトルの x 成分.
-  ///   @param uy 上方向のベクトルの y 成分.
-  ///   @param uz 上方向のベクトルの z 成分.
-  ///   @return 求めたビュー変換行列.
-  /// 
+  ///
+  /// ビュー変換行列を返す.
+  ///
+  /// @param ex 視点の位置の x 座標値.
+  /// @param ey 視点の位置の y 座標値.
+  /// @param ez 視点の位置の z 座標値.
+  /// @param tx 目標点の位置の x 座標値.
+  /// @param ty 目標点の位置の y 座標値.
+  /// @param tz 目標点の位置の z 座標値.
+  /// @param ux 上方向のベクトルの x 成分.
+  /// @param uy 上方向のベクトルの y 成分.
+  /// @param uz 上方向のベクトルの z 成分.
+  /// @return 求めたビュー変換行列.
+  ///
   inline GgMatrix ggLookat(
     GLfloat ex, GLfloat ey, GLfloat ez,     // 視点の位置
     GLfloat tx, GLfloat ty, GLfloat tz,     // 目標点の位置
@@ -3104,13 +3291,14 @@ namespace gg
     return m.loadLookat(ex, ey, ez, tx, ty, tz, ux, uy, uz);
   }
 
-  /// @brief ビュー変換行列を返す.
-  /// 
-  ///   @param e 視点の位置を格納した GLfloat 型の 3 要素の配列変数.
-  ///   @param t 目標点の位置を格納した GLfloat 型の 3 要素の配列変数.
-  ///   @param u 上方向のベクトルを格納した GLfloat 型の 3 要素の配列変数.
-  ///   @return 求めたビュー変換行列.
-  /// 
+  ///
+  /// ビュー変換行列を返す.
+  ///
+  /// @param e 視点の位置を格納した GLfloat 型の 3 要素の配列変数.
+  /// @param t 目標点の位置を格納した GLfloat 型の 3 要素の配列変数.
+  /// @param u 上方向のベクトルを格納した GLfloat 型の 3 要素の配列変数.
+  /// @return 求めたビュー変換行列.
+  ///
   inline GgMatrix ggLookat(
     const GLfloat* e,                       // 視点の位置
     const GLfloat* t,                       // 目標点の位置
@@ -3121,13 +3309,14 @@ namespace gg
     return m.loadLookat(e[0], e[1], e[2], t[0], t[1], t[2], u[0], u[1], u[2]);
   }
 
-  /// @brief ビュー変換行列を返す.
-  /// 
-  ///   @param e 視点の位置を格納した GgVector 型の変数.
-  ///   @param t 目標点の位置を格納した GgVector 型の変数.
-  ///   @param u 上方向のベクトルを格納した GgVector 型の変数.
-  ///   @return 求めたビュー変換行列.
-  /// 
+  ///
+  /// ビュー変換行列を返す.
+  ///
+  /// @param e 視点の位置を格納した GgVector 型の変数.
+  /// @param t 目標点の位置を格納した GgVector 型の変数.
+  /// @param u 上方向のベクトルを格納した GgVector 型の変数.
+  /// @return 求めたビュー変換行列.
+  ///
   inline GgMatrix ggLookat(
     const GgVector& e,                      // 視点の位置
     const GgVector& t,                      // 目標点の位置
@@ -3138,16 +3327,17 @@ namespace gg
     return m.loadLookat(e[0], e[1], e[2], t[0], t[1], t[2], u[0], u[1], u[2]);
   }
 
-  /// @brief 直交投影変換行列を返す.
-  /// 
-  ///   @param left ウィンドウの左端の位置.
-  ///   @param right ウィンドウの右端の位置.
-  ///   @param bottom ウィンドウの下端の位置.
-  ///   @param top ウィンドウの上端の位置.
-  ///   @param zNear 視点から前方面までの位置.
-  ///   @param zFar 視点から後方面までの位置.
-  ///   @return 求めた直交投影変換行列.
-  /// 
+  ///
+  /// 直交投影変換行列を返す.
+  ///
+  /// @param left ウィンドウの左端の位置.
+  /// @param right ウィンドウの右端の位置.
+  /// @param bottom ウィンドウの下端の位置.
+  /// @param top ウィンドウの上端の位置.
+  /// @param zNear 視点から前方面までの位置.
+  /// @param zFar 視点から後方面までの位置.
+  /// @return 求めた直交投影変換行列.
+  ///
   inline GgMatrix ggOrthogonal(GLfloat left, GLfloat right,
     GLfloat bottom, GLfloat top,
     GLfloat zNear, GLfloat zFar)
@@ -3156,16 +3346,17 @@ namespace gg
     return m.loadOrthogonal(left, right, bottom, top, zNear, zFar);
   }
 
-  /// @brief 透視透視投影変換行列を返す.
-  /// 
-  ///   @param left ウィンドウの左端の位置.
-  ///   @param right ウィンドウの右端の位置.
-  ///   @param bottom ウィンドウの下端の位置.
-  ///   @param top ウィンドウの上端の位置.
-  ///   @param zNear 視点から前方面までの位置.
-  ///   @param zFar 視点から後方面までの位置.
-  ///   @return 求めた透視投影変換行列.
-  /// 
+  ///
+  /// 透視透視投影変換行列を返す.
+  ///
+  /// @param left ウィンドウの左端の位置.
+  /// @param right ウィンドウの右端の位置.
+  /// @param bottom ウィンドウの下端の位置.
+  /// @param top ウィンドウの上端の位置.
+  /// @param zNear 視点から前方面までの位置.
+  /// @param zFar 視点から後方面までの位置.
+  /// @return 求めた透視投影変換行列.
+  ///
   inline GgMatrix ggFrustum(
     GLfloat left, GLfloat right,
     GLfloat bottom, GLfloat top,
@@ -3176,14 +3367,15 @@ namespace gg
     return m.loadFrustum(left, right, bottom, top, zNear, zFar);
   }
 
-  /// @brief 画角を指定して透視投影変換行列を返す.
-  /// 
-  ///   @param fovy y 方向の画角.
-  ///   @param aspect 縦横比.
-  ///   @param zNear 視点から前方面までの位置.
-  ///   @param zFar 視点から後方面までの位置.
-  ///   @return 求めた透視投影変換行列.
-  /// 
+  ///
+  /// 画角を指定して透視投影変換行列を返す.
+  ///
+  /// @param fovy y 方向の画角.
+  /// @param aspect 縦横比.
+  /// @param zNear 視点から前方面までの位置.
+  /// @param zFar 視点から後方面までの位置.
+  /// @return 求めた透視投影変換行列.
+  ///
   inline GgMatrix ggPerspective(
     GLfloat fovy, GLfloat aspect,
     GLfloat zNear, GLfloat zFar
@@ -3193,37 +3385,41 @@ namespace gg
     return m.loadPerspective(fovy, aspect, zNear, zFar);
   }
 
-  /// @brief 転置行列を返す.
-  /// 
-  ///   @param m 元の変換行列.
-  ///   @return m の転置行列.
-  /// 
+  ///
+  /// 転置行列を返す.
+  ///
+  /// @param m 元の変換行列.
+  /// @return m の転置行列.
+  ///
   inline GgMatrix ggTranspose(const GgMatrix& m)
   {
     return m.transpose();
   }
 
-  /// @brief 逆行列を返す.
-  /// 
-  ///   @param m 元の変換行列.
-  ///   @return m の逆行列.
-  /// 
+  ///
+  /// 逆行列を返す.
+  ///
+  /// @param m 元の変換行列.
+  /// @return m の逆行列.
+  ///
   inline GgMatrix ggInvert(const GgMatrix& m)
   {
     return m.invert();
   }
 
-  /// @brief 法線変換行列を返す.
-  /// 
-  ///   @param m 元の変換行列.
-  ///   @return m の法線変換行列.
-  /// 
+  ///
+  /// 法線変換行列を返す.
+  ///
+  /// @param m 元の変換行列.
+  /// @return m の法線変換行列.
+  ///
   inline GgMatrix ggNormal(const GgMatrix& m)
   {
     return m.normal();
   }
 
-  /// @brief 四元数.
+  ///
+  /// 四元数.
   ///
   class GgQuaternion : public GgVector
   {
@@ -3241,68 +3437,75 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
+    ///
+    /// コンストラクタ.
     ///
     GgQuaternion()
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param x 四元数の x 要素.
-    ///   @param y 四元数の y 要素.
-    ///   @param z 四元数の z 要素.
-    ///   @param w 四元数の w 要素.
-    /// 
-    constexpr GgQuaternion(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
-      : GgVector{ x, y, z, w }
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param x 四元数の x 要素.
+    /// @param y 四元数の y 要素.
+    /// @param z 四元数の z 要素.
+    /// @param w 四元数の w 要素.
+    ///
+    constexpr GgQuaternion(GLfloat x, GLfloat y, GLfloat z, GLfloat w) :
+      GgVector{ x, y, z, w }
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param c GLfloat 型の値.
-    /// 
-    constexpr GgQuaternion(GLfloat c)
-      : GgQuaternion{ c, c, c, c }
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param c GLfloat 型の値.
+    ///
+    constexpr GgQuaternion(GLfloat c) :
+      GgQuaternion{ c, c, c, c }
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    /// 
-    GgQuaternion(const GLfloat* a)
-      : GgQuaternion{ a[0], a[1], a[2], a[3] }
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    ///
+    GgQuaternion(const GLfloat* a) :
+      GgQuaternion{ a[0], a[1], a[2], a[3] }
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    /// 
-    GgQuaternion(const GgVector& v)
-      : GgQuaternion{ v[0], v[1], v[2], v[3] }
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    ///
+    GgQuaternion(const GgVector& v) :
+      GgQuaternion{ v[0], v[1], v[2], v[3] }
     {
     }
 
-    /// @brief 四元数のノルムを求める.
-    /// 
-    ///   @return 四元数のノルム.
-    /// 
+    ///
+    /// 四元数のノルムを求める.
+    ///
+    /// @return 四元数のノルム.
+    ///
     GLfloat norm() const
     {
       return ggLength4(*this);
     }
 
-    /// @brief 四元数を格納する.
-    /// 
-    ///   @param x 四元数の x 要素.
-    ///   @param y 四元数の y 要素.
-    ///   @param z 四元数の z 要素.
-    ///   @param w 四元数の w 要素.
-    ///   @return 設定した四元数.
-    /// 
+    ///
+    /// 四元数を格納する.
+    ///
+    /// @param x 四元数の x 要素.
+    /// @param y 四元数の y 要素.
+    /// @param z 四元数の z 要素.
+    /// @param w 四元数の w 要素.
+    /// @return 設定した四元数.
+    ///
     GgQuaternion& load(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
       data()[0] = x;
@@ -3312,46 +3515,50 @@ namespace gg
       return *this;
     }
 
-    /// @brief 四元数を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return 設定した四元数.
-    /// 
+    ///
+    /// 四元数を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return 設定した四元数.
+    ///
     GgQuaternion& load(const GLfloat* a)
     {
       return load(a[0], a[1], a[2], a[3]);
     }
 
-    /// @brief 四元数を格納する.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return 設定した四元数.
-    /// 
+    ///
+    /// 四元数を格納する.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return 設定した四元数.
+    ///
     GgQuaternion& load(const GgVector& v)
     {
       static_cast<GgVector>(*this) = v;
       return *this;
     }
 
-    /// @brief 四元数を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return 設定した四元数.
-    /// 
+    ///
+    /// 四元数を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return 設定した四元数.
+    ///
     GgQuaternion& load(const GgQuaternion& q)
     {
       *this = q;
       return *this;
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を格納する.
-    /// 
-    ///   @param x 加える四元数の x 要素.
-    ///   @param y 加える四元数の y 要素.
-    ///   @param z 加える四元数の z 要素.
-    ///   @param w 加える四元数の w 要素.
-    ///   @return (x, y, z, w) を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を格納する.
+    ///
+    /// @param x 加える四元数の x 要素.
+    /// @param y 加える四元数の y 要素.
+    /// @param z 加える四元数の z 要素.
+    /// @param w 加える四元数の w 要素.
+    /// @return (x, y, z, w) を加えた四元数.
+    ///
     GgQuaternion& loadAdd(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
       data()[0] += x;
@@ -3361,44 +3568,48 @@ namespace gg
       return *this;
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a を加えた四元数.
+    ///
     GgQuaternion& loadAdd(const GLfloat* a)
     {
       return loadAdd(a[0], a[1], a[2], a[3]);
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を格納する.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を格納する.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v を加えた四元数.
+    ///
     GgQuaternion& loadAdd(const GgVector& v)
     {
       return loadAdd(v[0], v[1], v[2], v[3]);
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q を加えた四元数.
+    ///
     GgQuaternion& loadAdd(const GgQuaternion& q)
     {
       return loadAdd(q[0], q[1], q[2], q[3]);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を格納する.
-    /// 
-    ///   @param x 引く四元数の x 要素.
-    ///   @param y 引く四元数の y 要素.
-    ///   @param z 引く四元数の z 要素.
-    ///   @param w 引く四元数の w 要素.
-    ///   @return (x, y, z, w) を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を格納する.
+    ///
+    /// @param x 引く四元数の x 要素.
+    /// @param y 引く四元数の y 要素.
+    /// @param z 引く四元数の z 要素.
+    /// @param w 引く四元数の w 要素.
+    /// @return (x, y, z, w) を引いた四元数.
+    ///
     GgQuaternion& loadSubtract(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
       data()[0] -= x;
@@ -3408,231 +3619,252 @@ namespace gg
       return *this;
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a を引いた四元数.
+    ///
     GgQuaternion& loadSubtract(const GLfloat* a)
     {
       return loadSubtract(a[0], a[1], a[2], a[3]);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を格納する.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を格納する.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v を引いた四元数.
+    ///
     GgQuaternion& loadSubtract(const GgVector& v)
     {
       return loadSubtract(v[0], v[1], v[2], v[3]);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q を引いた四元数.
+    ///
     GgQuaternion& loadSubtract(const GgQuaternion& q)
     {
       return loadSubtract(q[0], q[1], q[2], q[3]);
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を格納する.
-    /// 
-    ///   @param x 掛ける四元数の x 要素.
-    ///   @param y 掛ける四元数の y 要素.
-    ///   @param z 掛ける四元数の z 要素.
-    ///   @param w 掛ける四元数の w 要素.
-    ///   @return (x, y, z, w) を掛けた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を格納する.
+    ///
+    /// @param x 掛ける四元数の x 要素.
+    /// @param y 掛ける四元数の y 要素.
+    /// @param z 掛ける四元数の z 要素.
+    /// @param w 掛ける四元数の w 要素.
+    /// @return (x, y, z, w) を掛けた四元数.
+    ///
     GgQuaternion& loadMultiply(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
       const GLfloat a[]{ x, y, z, w };
       return loadMultiply(a);
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a を乗じた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a を乗じた四元数.
+    ///
     GgQuaternion& loadMultiply(const GLfloat* a)
     {
       return load(multiply(a));
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を格納する.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v を乗じた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を格納する.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v を乗じた四元数.
+    ///
     GgQuaternion& loadMultiply(const GgVector& v)
     {
       return loadMultiply(v.data());
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q を乗じた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q を乗じた四元数.
+    ///
     GgQuaternion& loadMultiply(const GgQuaternion& q)
     {
       return loadMultiply(q.data());
     }
 
-    /// @brief 四元を別の四元数で除算した結果を格納する.
-    /// 
-    ///   @param x 割る四元数の x 要素.
-    ///   @param y 割る四元数の y 要素.
-    ///   @param z 割る四元数の z 要素.
-    ///   @param w 割る四元数の w 要素.
-    ///   @return (x, y, z, w) を割った四元数.
-    /// 
+    ///
+    /// 四元を別の四元数で除算した結果を格納する.
+    ///
+    /// @param x 割る四元数の x 要素.
+    /// @param y 割る四元数の y 要素.
+    /// @param z 割る四元数の z 要素.
+    /// @param w 割る四元数の w 要素.
+    /// @return (x, y, z, w) を割った四元数.
+    ///
     GgQuaternion& loadDivide(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
       const GLfloat a[]{ x, y, z, w };
       return loadDivide(a);
     }
 
-    /// @brief 四元を別の四元数で除算した結果を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a で割った四元数.
-    /// 
+    ///
+    /// 四元を別の四元数で除算した結果を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a で割った四元数.
+    ///
     GgQuaternion& loadDivide(const GLfloat* a)
     {
       return load(divide(a));
     }
 
-    /// @brief 四元を別の四元数で除算した結果を格納する.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v で割った四元数.
-    /// 
+    ///
+    /// 四元を別の四元数で除算した結果を格納する.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v で割った四元数.
+    ///
     GgQuaternion& loadDivide(const GgVector& v)
     {
       return loadDivide(v.data());
     }
 
-    /// @brief 四元を別の四元数で除算した結果を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q で割った四元数.
-    /// 
+    ///
+    /// 四元を別の四元数で除算した結果を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q で割った四元数.
+    ///
     GgQuaternion& loadDivide(const GgQuaternion& q)
     {
       return loadDivide(q.data());
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を返す.
-    /// 
-    ///   @param x 加える四元数の x 要素.
-    ///   @param y 加える四元数の y 要素.
-    ///   @param z 加える四元数の z 要素.
-    ///   @param w 加える四元数の w 要素.
-    ///   @return (x, y, z, w) を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を返す.
+    ///
+    /// @param x 加える四元数の x 要素.
+    /// @param y 加える四元数の y 要素.
+    /// @param z 加える四元数の z 要素.
+    /// @param w 加える四元数の w 要素.
+    /// @return (x, y, z, w) を加えた四元数.
+    ///
     GgQuaternion add(GLfloat x, GLfloat y, GLfloat z, GLfloat w) const
     {
       GgQuaternion s{ *this };
       return s.loadAdd(x, y, z, w);
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を返す.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を返す.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a を加えた四元数.
+    ///
     GgQuaternion add(const GLfloat* a) const
     {
       return add(a[0], a[1], a[2], a[3]);
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を返す.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を返す.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v を加えた四元数.
+    ///
     GgQuaternion add(const GgVector& v) const
     {
       return add(v[0], v[1], v[2], v[3]);
     }
 
-    /// @brief 四元数に別の四元数を加算した結果を返す.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q を加えた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を加算した結果を返す.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q を加えた四元数.
+    ///
     GgQuaternion add(const GgQuaternion& q) const
     {
       return add(q[0], q[1], q[2], q[3]);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を返す.
-    /// 
-    ///   @param x 引く四元数の x 要素.
-    ///   @param y 引く四元数の y 要素.
-    ///   @param z 引く四元数の z 要素.
-    ///   @param w 引く四元数の w 要素.
-    ///   @return (x, y, z, w) を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を返す.
+    ///
+    /// @param x 引く四元数の x 要素.
+    /// @param y 引く四元数の y 要素.
+    /// @param z 引く四元数の z 要素.
+    /// @param w 引く四元数の w 要素.
+    /// @return (x, y, z, w) を引いた四元数.
+    ///
     GgQuaternion subtract(GLfloat x, GLfloat y, GLfloat z, GLfloat w) const
     {
       GgQuaternion s{ *this };
       return s.loadSubtract(x, y, z, w);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を返す.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を返す.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a を引いた四元数.
+    ///
     GgQuaternion subtract(const GLfloat* a) const
     {
       return subtract(a[0], a[1], a[2], a[3]);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を返す.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を返す.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v を引いた四元数.
+    ///
     GgQuaternion subtract(const GgVector& v) const
     {
       return subtract(v[0], v[1], v[2], v[3]);
     }
 
-    /// @brief 四元数から別の四元数を減算した結果を返す.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q を引いた四元数.
-    /// 
+    ///
+    /// 四元数から別の四元数を減算した結果を返す.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q を引いた四元数.
+    ///
     GgQuaternion subtract(const GgQuaternion& q) const
     {
       return subtract(q[0], q[1], q[2], q[3]);
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を返す.
-    /// 
-    ///   @param x 掛ける四元数の x 要素.
-    ///   @param y 掛ける四元数の y 要素.
-    ///   @param z 掛ける四元数の z 要素.
-    ///   @param w 掛ける四元数の w 要素.
-    ///   @return (x, y, z, w) を掛けた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を返す.
+    ///
+    /// @param x 掛ける四元数の x 要素.
+    /// @param y 掛ける四元数の y 要素.
+    /// @param z 掛ける四元数の z 要素.
+    /// @param w 掛ける四元数の w 要素.
+    /// @return (x, y, z, w) を掛けた四元数.
+    ///
     GgQuaternion multiply(GLfloat x, GLfloat y, GLfloat z, GLfloat w) const
     {
       const GLfloat a[]{ x, y, z, w };
       return multiply(a);
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を返す.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a を掛けた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を返す.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a を掛けた四元数.
+    ///
     GgQuaternion multiply(const GLfloat* a) const
     {
       GgQuaternion s;
@@ -3640,45 +3872,49 @@ namespace gg
       return s;
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を返す.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v を掛けた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を返す.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v を掛けた四元数.
+    ///
     GgQuaternion multiply(const GgVector& v) const
     {
       return multiply(v.data());
     }
 
-    /// @brief 四元数に別の四元数を乗算した結果を返す.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q を掛けた四元数.
-    /// 
+    ///
+    /// 四元数に別の四元数を乗算した結果を返す.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q を掛けた四元数.
+    ///
     GgQuaternion multiply(const GgQuaternion& q) const
     {
       return multiply(q.data());
     }
 
-    /// @brief 四元数を別の四元数で除算した結果を返す.
-    /// 
-    ///   @param x 割る四元数の x 要素.
-    ///   @param y 割る四元数の y 要素.
-    ///   @param z 割る四元数の z 要素.
-    ///   @param w 割る四元数の w 要素.
-    ///   @return (x, y, z, w) を割った四元数.
-    /// 
+    ///
+    /// 四元数を別の四元数で除算した結果を返す.
+    ///
+    /// @param x 割る四元数の x 要素.
+    /// @param y 割る四元数の y 要素.
+    /// @param z 割る四元数の z 要素.
+    /// @param w 割る四元数の w 要素.
+    /// @return (x, y, z, w) を割った四元数.
+    ///
     GgQuaternion divide(GLfloat x, GLfloat y, GLfloat z, GLfloat w) const
     {
       const GLfloat a[]{ x, y, z, w };
       return divide(a);
     }
 
-    /// @brief 四元数を別の四元数で除算した結果を返す.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return a で割った四元数.
-    /// 
+    ///
+    /// 四元数を別の四元数で除算した結果を返す.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return a で割った四元数.
+    ///
     GgQuaternion divide(const GLfloat* a) const
     {
       GgQuaternion s, ia;
@@ -3687,21 +3923,23 @@ namespace gg
       return s;
     }
 
-    /// @brief 四元数を別の四元数で除算した結果を返す.
-    /// 
-    ///   @param v 四元数を格納した GgVector 型の変数.
-    ///   @return v で割った四元数.
-    /// 
+    ///
+    /// 四元数を別の四元数で除算した結果を返す.
+    ///
+    /// @param v 四元数を格納した GgVector 型の変数.
+    /// @return v で割った四元数.
+    ///
     GgQuaternion divide(const GgVector& v) const
     {
       return divide(v.data());
     }
 
-    /// @brief 四元数を別の四元数で除算した結果を返す.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return q で割った四元数.
-    /// 
+    ///
+    /// 四元数を別の四元数で除算した結果を返す.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return q で割った四元数.
+    ///
     GgQuaternion divide(const GgQuaternion& q) const
     {
       return divide(q.data());
@@ -3813,301 +4051,331 @@ namespace gg
       return operator/(q.data());
     }
 
-    /// @brief 回転の変換行列を表す四元数を格納する.
-    /// 
-    ///   @param a GLfloat 型の 16 要素の変換行列.
-    ///   @return a による回転の変換に相当する四元数.
-    /// 
+    ///
+    /// 回転の変換行列を表す四元数を格納する.
+    ///
+    /// @param a GLfloat 型の 16 要素の変換行列.
+    /// @return a による回転の変換に相当する四元数.
+    ///
     GgQuaternion& loadMatrix(const GLfloat* a)
     {
       toQuaternion(data(), a);
       return *this;
     }
 
-    /// @brief 回転の変換行列 m を表す四元数を格納する.
-    /// 
-    ///   @param m Ggmatrix 型の変換行列.
-    ///   @return m による回転の変換に相当する四元数.
-    /// 
+    ///
+    /// 回転の変換行列 m を表す四元数を格納する.
+    ///
+    /// @param m Ggmatrix 型の変換行列.
+    /// @return m による回転の変換に相当する四元数.
+    ///
     GgQuaternion& loadMatrix(const GgMatrix& m)
     {
       return loadMatrix(m.get());
     }
 
-    /// @brief 単位元を格納する.
-    /// 
-    ///   @return 格納された単位元.
-    /// 
+    ///
+    /// 単位元を格納する.
+    ///
+    /// @return 格納された単位元.
+    ///
     GgQuaternion& loadIdentity()
     {
       return load(0.0f, 0.0f, 0.0f, 1.0f);
     }
 
-    /// @brief (x, y, z) を軸として角度 a 回転する四元数を格納する.
-    /// 
-    ///   @param x 軸ベクトルの x 成分.
-    ///   @param y 軸ベクトルの y 成分.
-    ///   @param z 軸ベクトルの z 成分.
-    ///   @param a 回転角.
-    ///   @return 格納された回転を表す四元数.
-    /// 
+    ///
+    /// (x, y, z) を軸として角度 a 回転する四元数を格納する.
+    ///
+    /// @param x 軸ベクトルの x 成分.
+    /// @param y 軸ベクトルの y 成分.
+    /// @param z 軸ベクトルの z 成分.
+    /// @param a 回転角.
+    /// @return 格納された回転を表す四元数.
+    ///
     GgQuaternion& loadRotate(GLfloat x, GLfloat y, GLfloat z, GLfloat a);
 
-    /// @brief (v[0], v[1], v[2]) を軸として角度 a 回転する四元数を格納する.
-    /// 
-    ///   @param v 軸ベクトルを表す GLfloat 型の 3 要素の配列変数.
-    ///   @param a 回転角.
-    ///   @return 格納された回転を表す四元数.
-    /// 
+    ///
+    /// (v[0], v[1], v[2]) を軸として角度 a 回転する四元数を格納する.
+    ///
+    /// @param v 軸ベクトルを表す GLfloat 型の 3 要素の配列変数.
+    /// @param a 回転角.
+    /// @return 格納された回転を表す四元数.
+    ///
     GgQuaternion& loadRotate(const GLfloat* v, GLfloat a)
     {
       return loadRotate(v[0], v[1], v[2], a);
     }
 
-    /// @brief (v[0], v[1], v[2]) を軸として角度 v[3] 回転する四元数を格納する.
-    /// 
-    ///   @param v 軸ベクトルと回転角を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return 格納された回転を表す四元数.
-    /// 
+    ///
+    /// (v[0], v[1], v[2]) を軸として角度 v[3] 回転する四元数を格納する.
+    ///
+    /// @param v 軸ベクトルと回転角を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return 格納された回転を表す四元数.
+    ///
     GgQuaternion& loadRotate(const GLfloat* v)
     {
       return loadRotate(v[0], v[1], v[2], v[3]);
     }
 
-    /// @brief x 軸中心に角度 a 回転する四元数を格納する.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 格納された回転を表す四元数.
-    /// 
+    ///
+    /// x 軸中心に角度 a 回転する四元数を格納する.
+    ///
+    /// @param a 回転角.
+    /// @return 格納された回転を表す四元数.
+    ///
     GgQuaternion& loadRotateX(GLfloat a);
 
-    /// @brief y 軸中心に角度 a 回転する四元数を格納する.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 格納された回転を表す四元数.
-    /// 
+    ///
+    /// y 軸中心に角度 a 回転する四元数を格納する.
+    ///
+    /// @param a 回転角.
+    /// @return 格納された回転を表す四元数.
+    ///
     GgQuaternion& loadRotateY(GLfloat a);
 
-    /// @brief z 軸中心に角度 a 回転する四元数を格納する.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 格納された回転を表す四元数.
-    /// 
+    ///
+    /// z 軸中心に角度 a 回転する四元数を格納する.
+    ///
+    /// @param a 回転角.
+    /// @return 格納された回転を表す四元数.
+    ///
     GgQuaternion& loadRotateZ(GLfloat a);
 
-    /// @brief 四元数を (x, y, z) を軸として角度 a 回転した四元数を返す.
-    /// 
-    ///   @param x 軸ベクトルの x 成分.
-    ///   @param y 軸ベクトルの y 成分.
-    ///   @param z 軸ベクトルの z 成分.
-    ///   @param a 回転角.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数を (x, y, z) を軸として角度 a 回転した四元数を返す.
+    ///
+    /// @param x 軸ベクトルの x 成分.
+    /// @param y 軸ベクトルの y 成分.
+    /// @param z 軸ベクトルの z 成分.
+    /// @param a 回転角.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion rotate(GLfloat x, GLfloat y, GLfloat z, GLfloat a) const
     {
       GgQuaternion q;
       return multiply(q.loadRotate(x, y, z, a));
     }
 
-    /// @brief 四元数を (v[0], v[1], v[2]) を軸として角度 a 回転した四元数を返す.
-    /// 
-    ///   @param v 軸ベクトルを表す GLfloat 型の 3 要素の配列変数.
-    ///   @param a 回転角.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数を (v[0], v[1], v[2]) を軸として角度 a 回転した四元数を返す.
+    ///
+    /// @param v 軸ベクトルを表す GLfloat 型の 3 要素の配列変数.
+    /// @param a 回転角.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion rotate(const GLfloat* v, GLfloat a) const
     {
       return rotate(v[0], v[1], v[2], a);
     }
 
-    /// @brief 四元数を (v[0], v[1], v[2]) を軸として角度 v[3] 回転した四元数を返す.
-    /// 
-    ///   @param v 軸ベクトルを表す GLfloat 型の 4 要素の配列変数.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数を (v[0], v[1], v[2]) を軸として角度 v[3] 回転した四元数を返す.
+    ///
+    /// @param v 軸ベクトルを表す GLfloat 型の 4 要素の配列変数.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion rotate(const GLfloat* v) const
     {
       return rotate(v[0], v[1], v[2], v[3]);
     }
 
-    /// @brief 四元数を x 軸中心に角度 a 回転した四元数を返す.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数を x 軸中心に角度 a 回転した四元数を返す.
+    ///
+    /// @param a 回転角.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion rotateX(GLfloat a) const
     {
       return rotate(1.0f, 0.0f, 0.0f, a);
     }
 
-    /// @brief 四元数を y 軸中心に角度 a 回転した四元数を返す.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数を y 軸中心に角度 a 回転した四元数を返す.
+    ///
+    /// @param a 回転角.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion rotateY(GLfloat a) const
     {
       return rotate(0.0f, 1.0f, 0.0f, a);
     }
 
-    /// @brief 四元数を z 軸中心に角度 a 回転した四元数を返す.
-    /// 
-    ///   @param a 回転角.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数を z 軸中心に角度 a 回転した四元数を返す.
+    ///
+    /// @param a 回転角.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion rotateZ(GLfloat a) const
     {
       return rotate(0.0f, 0.0f, 1.0f, a);
     }
 
-    /// @brief オイラー角 (heading, pitch, roll) で与えられた回転を表す四元数を格納する.
-    /// 
-    ///   @param heading y 軸中心の回転角.
-    ///   @param pitch x 軸中心の回転角.
-    ///   @param roll z 軸中心の回転角.
-    ///   @return 格納した回転を表す四元数.
-    /// 
+    ///
+    /// オイラー角 (heading, pitch, roll) で与えられた回転を表す四元数を格納する.
+    ///
+    /// @param heading y 軸中心の回転角.
+    /// @param pitch x 軸中心の回転角.
+    /// @param roll z 軸中心の回転角.
+    /// @return 格納した回転を表す四元数.
+    ///
     GgQuaternion& loadEuler(GLfloat heading, GLfloat pitch, GLfloat roll);
 
-    /// @brief オイラー角 (e[0], e[1], e[2]) で与えられた回転を表す四元数を格納する.
-    /// 
-    ///   @param e オイラー角を表す GLfloat 型の 3 要素の配列変数 (heading, pitch, roll).
-    ///   @return 格納した回転を表す四元数.
-    /// 
+    ///
+    /// オイラー角 (e[0], e[1], e[2]) で与えられた回転を表す四元数を格納する.
+    ///
+    /// @param e オイラー角を表す GLfloat 型の 3 要素の配列変数 (heading, pitch, roll).
+    /// @return 格納した回転を表す四元数.
+    ///
     GgQuaternion& loadEuler(const GLfloat* e)
     {
       return loadEuler(e[0], e[1], e[2]);
     }
 
-    /// @brief 四元数をオイラー角 (heading, pitch, roll) で回転した四元数を返す.
-    /// 
-    ///   @param heading y 軸中心の回転角.
-    ///   @param pitch x 軸中心の回転角.
-    ///   @param roll z 軸中心の回転角.
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数をオイラー角 (heading, pitch, roll) で回転した四元数を返す.
+    ///
+    /// @param heading y 軸中心の回転角.
+    /// @param pitch x 軸中心の回転角.
+    /// @param roll z 軸中心の回転角.
+    /// @return 回転した四元数.
+    ///
     GgQuaternion euler(GLfloat heading, GLfloat pitch, GLfloat roll) const
     {
       GgQuaternion r;
       return multiply(r.loadEuler(heading, pitch, roll));
     }
 
-    /// @brief 四元数をオイラー角 (e[0], e[1], e[2]) で回転した四元数を返す.
-    /// 
-    ///   @param e オイラー角を表す GLfloat 型の 3 要素の配列変数 (heading, pitch, roll).
-    ///   @return 回転した四元数.
-    /// 
+    ///
+    /// 四元数をオイラー角 (e[0], e[1], e[2]) で回転した四元数を返す.
+    ///
+    /// @param e オイラー角を表す GLfloat 型の 3 要素の配列変数 (heading, pitch, roll).
+    /// @return 回転した四元数.
+    ///
     GgQuaternion euler(const GLfloat* e) const
     {
       return euler(e[0], e[1], e[2]);
     }
 
-    /// @brief 球面線形補間の結果を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @param b 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @param t 補間パラメータ.
-    ///   @return 格納した a, b を t で内分した四元数.
-    /// 
+    ///
+    /// 球面線形補間の結果を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @param b 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @param t 補間パラメータ.
+    /// @return 格納した a, b を t で内分した四元数.
+    ///
     GgQuaternion& loadSlerp(const GLfloat* a, const GLfloat* b, GLfloat t)
     {
       slerp(data(), a, b, t);
       return *this;
     }
 
-    /// @brief 球面線形補間の結果を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @param r GgQuaternion 型の四元数.
-    ///   @param t 補間パラメータ.
-    ///   @return 格納した q, r を t で内分した四元数.
-    /// 
+    ///
+    /// 球面線形補間の結果を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @param r GgQuaternion 型の四元数.
+    /// @param t 補間パラメータ.
+    /// @return 格納した q, r を t で内分した四元数.
+    ///
     GgQuaternion& loadSlerp(const GgQuaternion& q, const GgQuaternion& r, GLfloat t)
     {
       return loadSlerp(q.data(), r.data(), t);
     }
 
-    /// @brief 球面線形補間の結果を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @param t 補間パラメータ.
-    ///   @return 格納した q, a を t で内分した四元数.
-    /// 
+    ///
+    /// 球面線形補間の結果を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @param t 補間パラメータ.
+    /// @return 格納した q, a を t で内分した四元数.
+    ///
     GgQuaternion& loadSlerp(const GgQuaternion& q, const GLfloat* a, GLfloat t)
     {
       return loadSlerp(q.data(), a, t);
     }
 
-    /// @brief 球面線形補間の結果を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @param t 補間パラメータ.
-    ///   @return 格納した a, q を t で内分した四元数.
-    /// 
+    ///
+    /// 球面線形補間の結果を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @param q GgQuaternion 型の四元数.
+    /// @param t 補間パラメータ.
+    /// @return 格納した a, q を t で内分した四元数.
+    ///
     GgQuaternion& loadSlerp(const GLfloat* a, const GgQuaternion& q, GLfloat t)
     {
       return loadSlerp(a, q.data(), t);
     }
 
-    /// @brief 引数に指定した四元数を正規化して格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return 正規化された四元数.
-    /// 
+    ///
+    /// 引数に指定した四元数を正規化して格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return 正規化された四元数.
+    ///
     GgQuaternion& loadNormalize(const GLfloat* a);
 
-    /// @brief 引数に指定した四元数を正規化して格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return 正規化された四元数.
-    /// 
+    ///
+    /// 引数に指定した四元数を正規化して格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return 正規化された四元数.
+    ///
     GgQuaternion& loadNormalize(const GgQuaternion& q)
     {
       return loadNormalize(q.data());
     }
 
-    /// @brief 引数に指定した四元数の共役四元数を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return 共役四元数.
-    /// 
+    ///
+    /// 引数に指定した四元数の共役四元数を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return 共役四元数.
+    ///
     GgQuaternion& loadConjugate(const GLfloat* a);
 
-    /// @brief 引数に指定した四元数の共役四元数を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return 共役四元数.
-    /// 
+    ///
+    /// 引数に指定した四元数の共役四元数を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return 共役四元数.
+    ///
     GgQuaternion& loadConjugate(const GgQuaternion& q)
     {
       return loadConjugate(q.data());
     }
 
-    /// @brief 引数に指定した四元数の逆元を格納する.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @return 四元数の逆元.
-    /// 
+    ///
+    /// 引数に指定した四元数の逆元を格納する.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @return 四元数の逆元.
+    ///
     GgQuaternion& loadInvert(const GLfloat* a);
 
-    /// @brief 引数に指定した四元数の逆元を格納する.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @return 四元数の逆元.
-    /// 
+    ///
+    /// 引数に指定した四元数の逆元を格納する.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @return 四元数の逆元.
+    ///
     GgQuaternion& loadInvert(const GgQuaternion& q)
     {
       return loadInvert(q.data());
     }
 
-    /// @brief 球面線形補間の結果を返す.
-    /// 
-    ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-    ///   @param t 補間パラメータ.
-    ///   @return 四元数を a に対して t で内分した結果.
-    /// 
+    ///
+    /// 球面線形補間の結果を返す.
+    ///
+    /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+    /// @param t 補間パラメータ.
+    /// @return 四元数を a に対して t で内分した結果.
+    ///
     GgQuaternion slerp(GLfloat* a, GLfloat t) const
     {
       GgQuaternion p;
@@ -4115,12 +4383,13 @@ namespace gg
       return p;
     }
 
-    /// @brief 球面線形補間の結果を返す.
-    /// 
-    ///   @param q GgQuaternion 型の四元数.
-    ///   @param t 補間パラメータ.
-    ///   @return 四元数を q に対して t で内分した結果.
-    /// 
+    ///
+    /// 球面線形補間の結果を返す.
+    ///
+    /// @param q GgQuaternion 型の四元数.
+    /// @param t 補間パラメータ.
+    /// @return 四元数を q に対して t で内分した結果.
+    ///
     GgQuaternion slerp(const GgQuaternion& q, GLfloat t) const
     {
       GgQuaternion p;
@@ -4128,10 +4397,11 @@ namespace gg
       return p;
     }
 
-    /// @brief 正規化する.
-    /// 
-    ///   @return 正規化された四元数.
-    /// 
+    ///
+    /// 正規化する.
+    ///
+    /// @return 正規化された四元数.
+    ///
     GgQuaternion normalize() const
     {
       GgQuaternion q;
@@ -4139,10 +4409,11 @@ namespace gg
       return q;
     }
 
-    /// @brief 共役四元数に変換する.
-    /// 
-    ///   @return 共役四元数.
-    /// 
+    ///
+    /// 共役四元数に変換する.
+    ///
+    /// @return 共役四元数.
+    ///
     GgQuaternion conjugate() const
     {
       GgQuaternion q;
@@ -4150,10 +4421,11 @@ namespace gg
       return q;
     }
 
-    /// @brief 逆元に変換する.
-    /// 
-    ///   @return 四元数の逆元.
-    /// 
+    ///
+    /// 逆元に変換する.
+    ///
+    /// @return 四元数の逆元.
+    ///
     GgQuaternion invert() const
     {
       GgQuaternion q;
@@ -4161,10 +4433,11 @@ namespace gg
       return q;
     }
 
-    /// @brief 四元数を取り出す.
-    /// 
-    ///   @param a 四元数を格納する GLfloat 型の 4 要素の配列変数.
-    /// 
+    ///
+    /// 四元数を取り出す.
+    ///
+    /// @param a 四元数を格納する GLfloat 型の 4 要素の配列変数.
+    ///
     void get(GLfloat* a) const
     {
       a[0] = data()[0];
@@ -4173,28 +4446,31 @@ namespace gg
       a[3] = data()[3];
     }
 
-    /// @brief 四元数が表す回転の変換行列を a に求める.
-    /// 
-    ///   @param a 回転の変換行列を格納する GLfloat 型の 16 要素の配列変数.
-    /// 
+    ///
+    /// 四元数が表す回転の変換行列を a に求める.
+    ///
+    /// @param a 回転の変換行列を格納する GLfloat 型の 16 要素の配列変数.
+    ///
     void getMatrix(GLfloat* a) const
     {
       toMatrix(a, data());
     }
 
-    /// @brief 四元数が表す回転の変換行列を m に求める.
-    /// 
-    ///   @param m 回転の変換行列を格納する GgMatrix 型の変数.
-    /// 
+    ///
+    /// 四元数が表す回転の変換行列を m に求める.
+    ///
+    /// @param m 回転の変換行列を格納する GgMatrix 型の変数.
+    ///
     void getMatrix(GgMatrix& m) const
     {
       getMatrix(m.data());
     }
 
-    /// @brief 四元数が表す回転の変換行列を取り出す.
-    /// 
-    ///   @return 回転の変換を表す GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 四元数が表す回転の変換行列を取り出す.
+    ///
+    /// @return 回転の変換を表す GgMatrix 型の変換行列.
+    ///
     GgMatrix getMatrix() const
     {
       GgMatrix m;
@@ -4202,10 +4478,11 @@ namespace gg
       return m;
     }
 
-    /// @brief 四元数の共役が表す回転の変換行列を a に求める.
-    /// 
-    ///   @param a 回転の変換行列を格納する GLfloat 型の 16 要素の配列変数.
-    /// 
+    ///
+    /// 四元数の共役が表す回転の変換行列を a に求める.
+    ///
+    /// @param a 回転の変換行列を格納する GLfloat 型の 16 要素の配列変数.
+    ///
     void getConjugateMatrix(GLfloat* a) const
     {
       GgQuaternion c;
@@ -4213,19 +4490,21 @@ namespace gg
       toMatrix(a, c.data());
     }
 
-    /// @brief 四元数の共役が表す回転の変換行列を m に求める.
-    /// 
-    ///   @param m 回転の変換行列を格納する GgMatrix 型の変数.
-    /// 
+    ///
+    /// 四元数の共役が表す回転の変換行列を m に求める.
+    ///
+    /// @param m 回転の変換行列を格納する GgMatrix 型の変数.
+    ///
     void getConjugateMatrix(GgMatrix& m) const
     {
       getConjugateMatrix(m.data());
     }
 
-    /// @brief 四元数の共役が表す回転の変換行列を取り出す.
-    /// 
-    ///   @return 回転の変換を表す GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 四元数の共役が表す回転の変換行列を取り出す.
+    ///
+    /// @return 回転の変換を表す GgMatrix 型の変換行列.
+    ///
     GgMatrix getConjugateMatrix() const
     {
       GgMatrix m;
@@ -4234,66 +4513,72 @@ namespace gg
     }
   };
 
-  /// @brief 四元数を返す.
-  /// 
-  ///   @param x 四元数の x 要素.
-  ///   @param y 四元数の y 要素.
-  ///   @param z 四元数の z 要素.
-  ///   @param w 四元数の w 要素.
-  ///   @return 四元数.
-  /// 
+  ///
+  /// 四元数を返す.
+  ///
+  /// @param x 四元数の x 要素.
+  /// @param y 四元数の y 要素.
+  /// @param z 四元数の z 要素.
+  /// @param w 四元数の w 要素.
+  /// @return 四元数.
+  ///
   inline GgQuaternion ggQuaternion(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
   {
     GgQuaternion q;
     return q.load(x, y, z, w);
   }
 
-  /// @brief 四元数を返す.
-  /// 
-  ///   @param a GLfloat 型の GLfloat 型の 4 要素の配列変数に格納した四元数.
-  ///   @return 四元数.
-  /// 
+  ///
+  /// 四元数を返す.
+  ///
+  /// @param a GLfloat 型の GLfloat 型の 4 要素の配列変数に格納した四元数.
+  /// @return 四元数.
+  ///
   inline GgQuaternion ggQuaternion(const GLfloat* a)
   {
     return ggQuaternion(a[0], a[1], a[2], a[3]);
   }
 
-  /// @brief 単位四元数を返す.
-  /// 
+  ///
+  /// 単位四元数を返す.
+  ///
   /// @return 単位四元数.
-  /// 
+  ///
   inline GgQuaternion ggIdentityQuaternion()
   {
     GgQuaternion q;
     return q.loadIdentity();
   }
 
-  /// @brief 回転の変換行列 m を表す四元数を返す.
-  /// 
-  ///   @param a GLfloat 型の 16 要素の配列変数.
-  ///   @return a による回転の変換に相当する四元数.
-  /// 
+  ///
+  /// 回転の変換行列 m を表す四元数を返す.
+  ///
+  /// @param a GLfloat 型の 16 要素の配列変数.
+  /// @return a による回転の変換に相当する四元数.
+  ///
   inline GgQuaternion ggMatrixQuaternion(const GLfloat* a)
   {
     GgQuaternion q;
     return q.loadMatrix(a);
   }
 
-  /// @brief 回転の変換行列 m を表す四元数を返す.
-  /// 
-  ///   @param m GgMatrix 型の変換行列.
-  ///   @return m による回転の変換に相当する四元数.
-  /// 
+  ///
+  /// 回転の変換行列 m を表す四元数を返す.
+  ///
+  /// @param m GgMatrix 型の変換行列.
+  /// @return m による回転の変換に相当する四元数.
+  ///
   inline GgQuaternion ggMatrixQuaternion(const GgMatrix& m)
   {
     return ggMatrixQuaternion(m.get());
   }
 
-  /// @brief 四元数 q の回転の変換行列を返す.
-  /// 
-  ///   @param q 元の四元数.
-  ///   @return 四元数 q が表す回転に相当する GgMatrix 型の変換行列.
-  /// 
+  ///
+  /// 四元数 q の回転の変換行列を返す.
+  ///
+  /// @param q 元の四元数.
+  /// @return 四元数 q が表す回転に相当する GgMatrix 型の変換行列.
+  ///
   inline GgMatrix ggQuaternionMatrix(const GgQuaternion& q)
   {
     GLfloat m[16];
@@ -4301,11 +4586,12 @@ namespace gg
     return GgMatrix{ m };
   }
 
-  /// @brief 四元数 q の回転の転置した変換行列を返す.
-  /// 
-  ///   @param q 元の四元数.
-  ///   @return 四元数 q が表す回転に相当する転置した GgMatrix 型の変換行列.
-  /// 
+  ///
+  /// 四元数 q の回転の転置した変換行列を返す.
+  ///
+  /// @param q 元の四元数.
+  /// @return 四元数 q が表す回転に相当する転置した GgMatrix 型の変換行列.
+  ///
   inline GgMatrix ggQuaternionTransposeMatrix(const GgQuaternion& q)
   {
     GLfloat m[16];
@@ -4314,154 +4600,168 @@ namespace gg
     return t.loadTranspose(m);
   }
 
-  /// @brief (x, y, z) を軸として角度 a 回転する四元数を返す
-  /// .
-  ///   @param x 軸ベクトルの x 成分.
-  ///   @param y 軸ベクトルの y 成分.
-  ///   @param z 軸ベクトルの z 成分.
-  ///   @param a 回転角.
-  ///   @return 回転を表す四元数.
-  /// 
+  ///
+  /// (x, y, z) を軸として角度 a 回転する四元数を返す.
+  ///
+  /// @param x 軸ベクトルの x 成分.
+  /// @param y 軸ベクトルの y 成分.
+  /// @param z 軸ベクトルの z 成分.
+  /// @param a 回転角.
+  /// @return 回転を表す四元数.
+  ///
   inline GgQuaternion ggRotateQuaternion(GLfloat x, GLfloat y, GLfloat z, GLfloat a)
   {
     GgQuaternion q;
     return q.loadRotate(x, y, z, a);
   }
 
-  /// @brief (v[0], v[1], v[2]) を軸として角度 a 回転する四元数を返す.
-  /// 
-  ///   @param v 軸ベクトルを表す GLfloat 型の 3 要素の配列変数.
-  ///   @param a 回転角.
-  ///   @return 回転を表す四元数.
-  /// 
+  ///
+  /// (v[0], v[1], v[2]) を軸として角度 a 回転する四元数を返す.
+  ///
+  /// @param v 軸ベクトルを表す GLfloat 型の 3 要素の配列変数.
+  /// @param a 回転角.
+  /// @return 回転を表す四元数.
+  ///
   inline GgQuaternion ggRotateQuaternion(const GLfloat* v, GLfloat a)
   {
     return ggRotateQuaternion(v[0], v[1], v[2], a);
   }
 
-  /// @brief (v[0], v[1], v[2]) を軸として角度 v[3] 回転する四元数を返す.
-  /// 
-  ///   @param v 軸ベクトルを表す GLfloat 型の 4 要素の配列変数.
-  ///   @return 回転を表す四元数.
-  /// 
+  ///
+  /// (v[0], v[1], v[2]) を軸として角度 v[3] 回転する四元数を返す.
+  ///
+  /// @param v 軸ベクトルを表す GLfloat 型の 4 要素の配列変数.
+  /// @return 回転を表す四元数.
+  ///
   inline GgQuaternion ggRotateQuaternion(const GLfloat* v)
   {
     return ggRotateQuaternion(v[0], v[1], v[2], v[3]);
   }
 
-  /// @brief オイラー角 (heading, pitch, roll) で与えられた回転を表す四元数を返す.
-  /// 
-  ///   @param heading y 軸中心の回転角.
-  ///   @param pitch x 軸中心の回転角.
-  ///   @param roll z 軸中心の回転角.
-  ///   @return 回転を表す四元数.
-  /// 
+  ///
+  /// オイラー角 (heading, pitch, roll) で与えられた回転を表す四元数を返す.
+  ///
+  /// @param heading y 軸中心の回転角.
+  /// @param pitch x 軸中心の回転角.
+  /// @param roll z 軸中心の回転角.
+  /// @return 回転を表す四元数.
+  ///
   inline GgQuaternion ggEulerQuaternion(GLfloat heading, GLfloat pitch, GLfloat roll)
   {
     GgQuaternion q;
     return q.loadEuler(heading, pitch, roll);
   }
 
-  /// @brief オイラー角 (e[0], e[1], e[2]) で与えられた回転を表す四元数を返す.
-  /// 
-  ///   @param e オイラー角を表す GLfloat 型の 3 要素の配列変数 (heading, pitch, roll).
-  ///   @return 回転を表す四元数.
-  /// 
+  ///
+  /// オイラー角 (e[0], e[1], e[2]) で与えられた回転を表す四元数を返す.
+  ///
+  /// @param e オイラー角を表す GLfloat 型の 3 要素の配列変数 (heading, pitch, roll).
+  /// @return 回転を表す四元数.
+  ///
   inline GgQuaternion ggEulerQuaternion(const GLfloat* e)
   {
     return ggEulerQuaternion(e[0], e[1], e[2]);
   }
 
-  /// @brief 二つの四元数の球面線形補間の結果を返す.
-  /// 
-  ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-  ///   @param b 四元数を格納した GLfloat 型の 4 要素の配列変数.
-  ///   @param t 補間パラメータ.
-  ///   @return a, b を t で内分した四元数.
-  /// 
+  ///
+  /// 二つの四元数の球面線形補間の結果を返す.
+  ///
+  /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+  /// @param b 四元数を格納した GLfloat 型の 4 要素の配列変数.
+  /// @param t 補間パラメータ.
+  /// @return a, b を t で内分した四元数.
+  ///
   inline GgQuaternion ggSlerp(const GLfloat* a, const GLfloat* b, GLfloat t)
   {
     GgQuaternion r;
     return r.loadSlerp(a, b, t);
   }
 
-  /// @brief 二つの四元数の球面線形補間の結果を返す.
-  /// 
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @param r GgQuaternion 型の四元数.
-  ///   @param t 補間パラメータ.
-  ///   @return q, r を t で内分した四元数.
-  /// 
+  ///
+  /// 二つの四元数の球面線形補間の結果を返す.
+  ///
+  /// @param q GgQuaternion 型の四元数.
+  /// @param r GgQuaternion 型の四元数.
+  /// @param t 補間パラメータ.
+  /// @return q, r を t で内分した四元数.
+  ///
   inline GgQuaternion ggSlerp(const GgQuaternion& q, const GgQuaternion& r, GLfloat t)
   {
     return ggSlerp(q.data(), r.data(), t);
   }
 
-  /// @brief 二つの四元数の球面線形補間の結果を返す.
-  /// 
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-  ///   @param t 補間パラメータ.
-  ///   @return q, a を t で内分した四元数.
-  /// 
+  ///
+  /// 二つの四元数の球面線形補間の結果を返す.
+  ///
+  /// @param q GgQuaternion 型の四元数.
+  /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+  /// @param t 補間パラメータ.
+  /// @return q, a を t で内分した四元数.
+  ///
   inline GgQuaternion ggSlerp(const GgQuaternion& q, const GLfloat* a, GLfloat t)
   {
     return ggSlerp(q.data(), a, t);
   }
 
-  /// @brief 二つの四元数の球面線形補間の結果を返す.
-  /// 
-  ///   @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @param t 補間パラメータ.
-  ///   @return a, q を t で内分した四元数.
-  /// 
+  ///
+  /// 二つの四元数の球面線形補間の結果を返す.
+  ///
+  /// @param a 四元数を格納した GLfloat 型の 4 要素の配列変数.
+  /// @param q GgQuaternion 型の四元数.
+  /// @param t 補間パラメータ.
+  /// @return a, q を t で内分した四元数.
+  ///
   inline GgQuaternion ggSlerp(const GLfloat* a, const GgQuaternion& q, GLfloat t)
   {
     return ggSlerp(a, q.data(), t);
   }
 
-  /// @brief 四元数のノルムを返す.
-  /// 
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @return 四元数 q のノルム.
-  /// 
+  ///
+  /// 四元数のノルムを返す.
+  ///
+  /// @param q GgQuaternion 型の四元数.
+  /// @return 四元数 q のノルム.
+  ///
   inline GLfloat ggNorm(const GgQuaternion& q)
   {
     return q.norm();
   }
 
-  /// @brief 正規化した四元数を返す.
-  /// 
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @return 四元数 q を正規化した四元数.
-  /// 
+  ///
+  /// 正規化した四元数を返す.
+  ///
+  /// @param q GgQuaternion 型の四元数.
+  /// @return 四元数 q を正規化した四元数.
+  ///
   inline GgQuaternion ggNormalize(const GgQuaternion& q)
   {
     return q.normalize();
   }
 
-  /// @brief 共役四元数を返す.
-  /// 
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @return 四元数 q の共役四元数.
-  /// 
+  ///
+  /// 共役四元数を返す.
+  ///
+  /// @param q GgQuaternion 型の四元数.
+  /// @return 四元数 q の共役四元数.
+  ///
   inline GgQuaternion ggConjugate(const GgQuaternion& q)
   {
     return q.conjugate();
   }
 
-  /// @brief 四元数の逆元を求める.
-  /// 
-  ///   @param q GgQuaternion 型の四元数.
-  ///   @return 四元数 q の逆元.
-  /// 
+  ///
+  /// 四元数の逆元を求める.
+  ///
+  /// @param q GgQuaternion 型の四元数.
+  /// @return 四元数 q の逆元.
+  ///
   inline GgQuaternion ggInvert(const GgQuaternion& q)
   {
     return q.invert();
   }
 
-  /// @brief 簡易トラックボール処理.
+  ///
+  /// 簡易トラックボール処理.
   ///
   class GgTrackball : public GgQuaternion
   {
@@ -4473,176 +4773,206 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
     ///
-    ///   @param q トラックボールの回転の初期値の四元数.
-    /// 
+    /// コンストラクタ.
+    ///
+    /// @param q トラックボールの回転の初期値の四元数.
+    ///
     GgTrackball(const GgQuaternion& q = ggIdentityQuaternion())
     {
       reset(q);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
     ///
     virtual ~GgTrackball()
     {
     }
 
-    /// @brief 代入.
-    /// 
-    ///   @param q トラックボールの回転の初期値の四元数.
-    /// 
+    ///
+    /// 代入.
+    ///
+    /// @param q トラックボールの回転の初期値の四元数.
+    ///
     GgTrackball& operator=(const GgQuaternion& q)
     {
       this->load(q);
       return *this;
     }
 
-    /// @brief トラックボール処理するマウスの移動範囲を指定する.
-    /// 
-    ///   @param w 領域の横幅.
-    ///   @param h 領域の高さ.
-    ///   @note ウィンドウのリサイズ時に呼び出す.
-    /// 
+    ///
+    /// トラックボール処理するマウスの移動範囲を指定する.
+    ///
+    /// @param w 領域の横幅.
+    /// @param h 領域の高さ.
+    ///
+    /// @note
+    /// ウィンドウのリサイズ時に呼び出す.
+    ///
     void region(GLfloat w, GLfloat h);
 
-    /// @brief トラックボール処理するマウスの移動範囲を指定する.
-    /// 
-    ///   @param w 領域の横幅.
-    ///   @param h 領域の高さ.
-    ///   @note ウィンドウのリサイズ時に呼び出す.
-    /// 
+    ///
+    /// トラックボール処理するマウスの移動範囲を指定する.
+    ///
+    /// @param w 領域の横幅.
+    /// @param h 領域の高さ.
+    ///
+    /// @note
+    /// ウィンドウのリサイズ時に呼び出す.
+    ///
     void region(int w, int h)
     {
       region(static_cast<GLfloat>(w), static_cast<GLfloat>(h));
     }
 
-    /// @brief トラックボール処理を開始する.
-    /// 
-    ///   @param x 現在のマウスの x 座標.
-    ///   @param y 現在のマウスの y 座標.
-    ///   @note マウスのドラッグ開始時 (マウスボタンを押したとき) に呼び出す.
-    /// 
+    ///
+    /// トラックボール処理を開始する.
+    ///
+    /// @param x 現在のマウスの x 座標.
+    /// @param y 現在のマウスの y 座標.
+    ///
+    /// @note
+    /// マウスのドラッグ開始時 (マウスボタンを押したとき) に呼び出す.
+    ///
     void begin(GLfloat x, GLfloat y);
 
-    /// @brief 回転の変換行列を計算する.
-    /// 
-    ///   @param x 現在のマウスの x 座標.
-    ///   @param y 現在のマウスの y 座標.
-    ///   @note マウスのドラッグ中に呼び出す.
-    /// 
+    ///
+    /// 回転の変換行列を計算する.
+    ///
+    /// @param x 現在のマウスの x 座標.
+    /// @param y 現在のマウスの y 座標.
+    ///
+    /// @note
+    /// マウスのドラッグ中に呼び出す.
+    ///
     void motion(GLfloat x, GLfloat y);
 
-    /// @brief トラックボールの回転角を修正する.
-    /// 
-    ///   @param q 修正分の回転角の四元数.
-    /// 
+    ///
+    /// トラックボールの回転角を修正する.
+    ///
+    /// @param q 修正分の回転角の四元数.
+    ///
     void rotate(const GgQuaternion& q);
 
-    /// @brief トラックボール処理を停止する.
-    /// 
-    ///   @param x 現在のマウスの x 座標.
-    ///   @param y 現在のマウスの y 座標.
-    ///   @note マウスのドラッグ終了時 (マウスボタンを離したとき) に呼び出す.
-    /// 
+    ///
+    /// トラックボール処理を停止する.
+    ///
+    /// @param x 現在のマウスの x 座標.
+    /// @param y 現在のマウスの y 座標.
+    ///
+    /// @note
+    /// マウスのドラッグ終了時 (マウスボタンを離したとき) に呼び出す.
+    ///
     void end(GLfloat x, GLfloat y);
 
-    /// @brief トラックボールをリセットする.
-    /// 
-    ///   @param トラックボールの回転の初期値の四元数.
-    /// 
-    void reset(const GgQuaternion &q = ggIdentityQuaternion());
+    ///
+    /// トラックボールをリセットする.
+    ///
+    /// @param q トラックボールの回転の初期値の四元数.
+    ///
+    void reset(const GgQuaternion& q = ggIdentityQuaternion());
 
-    /// @brief トラックボール処理の開始位置を取り出す.
-    /// 
-    ///   @return トラックボールの開始位置のポインタ.
-    /// 
+    ///
+    /// トラックボール処理の開始位置を取り出す.
+    ///
+    /// @return トラックボールの開始位置のポインタ.
+    ///
     const GLfloat* getStart() const
     {
       return start;
     }
 
-    /// @brief トラックボール処理の開始位置を取り出す.
-    ///   @param direction 0 なら x 方向, 1 なら y 方向.
+    ///
+    /// トラックボール処理の開始位置を取り出す.
+    /// @param direction 0 なら x 方向, 1 なら y 方向.
     const GLfloat& getStart(int direction) const
     {
       return start[direction];
     }
 
-    /// @brief トラックボール処理の開始位置を取り出す.
-    /// 
-    ///   @param position トラックボールの開始位置を格納する 2 要素の配列.
-    /// 
+    ///
+    /// トラックボール処理の開始位置を取り出す.
+    ///
+    /// @param position トラックボールの開始位置を格納する 2 要素の配列.
+    ///
     void getStart(GLfloat* position) const
     {
       position[0] = start[0];
       position[1] = start[1];
     }
 
-    /// @brief トラックボール処理の換算係数を取り出す.
-    /// 
-    ///   @return トラックボールの換算係数のポインタ.
-    /// 
+    ///
+    /// トラックボール処理の換算係数を取り出す.
+    ///
+    /// @return トラックボールの換算係数のポインタ.
+    ///
     const GLfloat* getScale() const
     {
       return scale;
     }
 
-    /// @brief トラックボール処理の換算係数を取り出す.
-    /// 
-    ///   @param direction 0 なら x 方向, 1 なら y 方向.
-    /// 
+    ///
+    /// トラックボール処理の換算係数を取り出す.
+    ///
+    /// @param direction 0 なら x 方向, 1 なら y 方向.
+    ///
     const GLfloat getScale(int direction) const
     {
       return scale[direction];
     }
 
-    /// @brief トラックボール処理の換算係数を取り出す.
-    /// 
-    ///   @param factor トラックボールの換算係数を格納する 2 要素の配列.
-    /// 
+    ///
+    /// トラックボール処理の換算係数を取り出す.
+    ///
+    /// @param factor トラックボールの換算係数を格納する 2 要素の配列.
+    ///
     void getScale(GLfloat* factor) const
     {
       factor[0] = scale[0];
       factor[1] = scale[1];
     }
 
-    /// @brief 現在の回転の四元数を取り出す.
-    /// 
-    ///   @return 回転の変換を表す Quaternion 型の四元数.
-    /// 
+    ///
+    /// 現在の回転の四元数を取り出す.
+    ///
+    /// @return 回転の変換を表す Quaternion 型の四元数.
+    ///
     const GgQuaternion& getQuaternion() const
     {
       return *this;
     }
 
-    /// @brief 現在の回転の変換行列を取り出す.
-    /// 
-    ///   @return 回転の変換を表す GgMatrix 型の変換行列.
-    /// 
+    ///
+    /// 現在の回転の変換行列を取り出す.
+    ///
+    /// @return 回転の変換を表す GgMatrix 型の変換行列.
+    ///
     const GgMatrix& getMatrix() const
     {
       return rt;
     }
 
-    /// @brief 現在の回転の変換行列を取り出す.
-    /// 
-    ///   @return 回転の変換を表す GLfloat 型の 16 要素の配列.
-    /// 
+    ///
+    /// 現在の回転の変換行列を取り出す.
+    ///
+    /// @return 回転の変換を表す GLfloat 型の 16 要素の配列.
+    ///
     const GLfloat* get() const
     {
       return rt.get();
     }
   };
 
-  /// @brief 配列の内容を TGA ファイルに保存する.
   ///
-  ///   @param name 保存するファイル名.
-  ///   @param buffer 画像データを格納した配列.
-  ///   @param width 画像の横の画素数.
-  ///   @param height 画像の縦の画素数.
-  ///   @param depth 1画素のバイト数.
-  ///   @return 保存に成功すれば true, 失敗すれば false.
+  /// 配列の内容を TGA ファイルに保存する.
+  ///
+  /// @param name 保存するファイル名.
+  /// @param buffer 画像データを格納した配列.
+  /// @param width 画像の横の画素数.
+  /// @param height 画像の縦の画素数.
+  /// @param depth 1画素のバイト数.
+  /// @return 保存に成功すれば true, 失敗すれば false.
   ///
   extern bool ggSaveTga(
     const std::string& name,
@@ -4652,38 +4982,31 @@ namespace gg
     unsigned int depth
   );
 
-  /// @brief カラーバッファの内容を TGA ファイルに保存する.
   ///
-  ///   @param name 保存するファイル名.
-  ///   @return 保存に成功すれば true, 失敗すれば false.
+  /// カラーバッファの内容を TGA ファイルに保存する.
+  ///
+  /// @param name 保存するファイル名.
+  /// @return 保存に成功すれば true, 失敗すれば false.
   ///
   extern bool ggSaveColor(const std::string& name);
 
-  /// @brief デプスバッファの内容を TGA ファイルに保存する.
   ///
-  ///   @param name 保存するファイル名.
-  ///   @return 保存に成功すれば true, 失敗すれば false.
+  /// デプスバッファの内容を TGA ファイルに保存する.
+  ///
+  /// @param name 保存するファイル名.
+  /// @return 保存に成功すれば true, 失敗すれば false.
   ///
   extern bool ggSaveDepth(const std::string& name);
 
-// OpenGL ES では GL_BGR/GL_BGRA が使えない
-#if defined(GL_GLES_PROTOTYPES)
-#  if !defined(GL_BGR)
-#    define GL_BGR 0x80E0
-#  endif
-#  if !defined(GL_BGRA)
-#    define GL_BGRA 0x80E1
-#  endif
-#endif
-
-  /// @brief TGA ファイル (8/16/24/32bit) をメモリに読み込む.
   ///
-  ///   @param name 読み込むファイル名.
-  ///   @param image 読み込んだデータを格納する vector.
-  ///   @param pWidth 読み込んだ画像の横の画素数の格納先のポインタ, nullptr なら格納しない.
-  ///   @param pHeight 読み込んだ画像の縦の画素数の格納先のポインタ, nullptr なら格納しない.
-  ///   @param pFormat 読み込んだファイルの書式 (GL_RED, G_RG, GL_BGR, G_BGRA) の格納先のポインタ, nullptr なら格納しない.
-  ///   @return 読み込みに成功すれば true, 失敗すれば false.
+  /// TGA ファイル (8/16/24/32bit) をメモリに読み込む.
+  ///
+  /// @param name 読み込むファイル名.
+  /// @param image 読み込んだデータを格納する vector.
+  /// @param pWidth 読み込んだ画像の横の画素数の格納先のポインタ, nullptr なら格納しない.
+  /// @param pHeight 読み込んだ画像の縦の画素数の格納先のポインタ, nullptr なら格納しない.
+  /// @param pFormat 読み込んだファイルの書式 (GL_RED, G_RG, GL_RGB, G_RGBA) の格納先のポインタ, nullptr なら格納しない.
+  /// @return 読み込みに成功すれば true, 失敗すれば false.
   ///
   extern bool ggReadImage(
     const std::string& name,
@@ -4693,35 +5016,39 @@ namespace gg
     GLenum* pFormat
   );
 
-  /// @brief テクスチャメモリを確保して画像データをテクスチャとして読み込む.
   ///
-  ///   @param image テクスチャとして読み込むデータ, nullptr ならテクスチャメモリの確保のみを行う.
-  ///   @param width テクスチャとして読み込むデータ image の横の画素数.
-  ///   @param height テクスチャとして読み込むデータ image の縦の画素数.
-  ///   @param format image のフォーマット.
-  ///   @param type image のデータ型.
-  ///   @param internal テクスチャの内部フォーマット.
-  ///   @param wrap テクスチャのラッピングモード, デフォルトは GL_CLAMP_TO_EDGE.
-  ///   @return テクスチャの作成に成功すればテクスチャ名, 失敗すれば 0.
+  /// テクスチャを作成して確保して画像データをテクスチャとして読み込む.
+  ///
+  /// @param image テクスチャとして読み込むデータ, nullptr ならテクスチャの作成のみを行う.
+  /// @param width テクスチャとして読み込むデータ image の横の画素数.
+  /// @param height テクスチャとして読み込むデータ image の縦の画素数.
+  /// @param format image のフォーマット.
+  /// @param type image のデータ型.
+  /// @param internal テクスチャの内部フォーマット.
+  /// @param wrap テクスチャのラッピングモード, デフォルトは GL_CLAMP_TO_EDGE.
+  /// @param swizzle true ならテクスチャの赤と青を入れ替える, デフォルトは true.
+  /// @return テクスチャの作成に成功すればテクスチャ名, 失敗すれば 0.
   ///
   extern GLuint ggLoadTexture(
     const GLvoid* image,
     GLsizei width,
     GLsizei height,
-    GLenum format = GL_BGR,
+    GLenum format = GL_RGB,
     GLenum type = GL_UNSIGNED_BYTE,
     GLenum internal = GL_RGB,
-    GLenum wrap = GL_CLAMP_TO_EDGE
+    GLenum wrap = GL_CLAMP_TO_EDGE,
+    bool swizzle = true
   );
 
-  /// @brief テクスチャメモリを確保して TGA 画像ファイルを読み込む.
   ///
-  ///   @param name 読み込むファイル名.
-  ///   @param pWidth 読みだした画像ファイルの横の画素数の格納先のポインタ (nullptr なら格納しない).
-  ///   @param pHeight 読みだした画像ファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない).
-  ///   @param internal glTexImage2D() に指定するテクスチャの内部フォーマット, 0 なら外部フォーマットに合わせる.
-  ///   @param wrap テクスチャのラッピングモード, デフォルトは GL_CLAMP_TO_EDGE.
-  ///   @return テクスチャの作成に成功すればテクスチャ名, 失敗すれば 0.
+  /// テクスチャを作成して TGA フォーマットの画像ファイルを読み込む.
+  ///
+  /// @param name 読み込むファイル名.
+  /// @param pWidth 読みだした画像ファイルの横の画素数の格納先のポインタ (nullptr なら格納しない).
+  /// @param pHeight 読みだした画像ファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない).
+  /// @param internal glTexImage2D() に指定するテクスチャの内部フォーマット, 0 なら外部フォーマットに合わせる.
+  /// @param wrap テクスチャのラッピングモード, デフォルトは GL_CLAMP_TO_EDGE.
+  /// @return テクスチャの作成に成功すればテクスチャ名, 失敗すれば 0.
   ///
   extern GLuint ggLoadImage(
     const std::string& name,
@@ -4731,15 +5058,16 @@ namespace gg
     GLenum wrap = GL_CLAMP_TO_EDGE
   );
 
-  /// @brief グレースケール画像 (8bit) から法線マップのデータを作成する.
   ///
-  ///   @param hmap グレースケール画像のデータ.
-  ///   @param width 高さマップのグレースケール画像 hmap の横の画素数.
-  ///   @param height 高さマップのグレースケール画像 hmap の縦の画素数.
-  ///   @param format データの書式 (GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA).
-  ///   @param nz 法線の z 成分の割合.
-  ///   @param internal 法線マップを格納するテクスチャの内部フォーマット.
-  ///   @param nmap 法線マップを格納する vector.
+  /// グレースケール画像 (8bit) から法線マップのデータを作成する.
+  ///
+  /// @param hmap グレースケール画像のデータ.
+  /// @param width 高さマップのグレースケール画像 hmap の横の画素数.
+  /// @param height 高さマップのグレースケール画像 hmap の縦の画素数.
+  /// @param format データの書式 (GL_RED, GL_RG, GL_RGB, GL_RGBA).
+  /// @param nz 法線の z 成分の割合.
+  /// @param internal 法線マップを格納するテクスチャの内部フォーマット.
+  /// @param nmap 法線マップを格納する vector.
   ///
   extern void ggCreateNormalMap(
     const GLubyte* hmap,
@@ -4751,14 +5079,15 @@ namespace gg
     std::vector<GgVector>& nmap
   );
 
-  /// @brief テクスチャメモリを確保して TGA 画像ファイルを読み込み法線マップを作成する.
   ///
-  ///   @param name 読み込むファイル名.
-  ///   @param nz 法線の z 成分の割合.
-  ///   @param pWidth 読みだした画像ファイルの横の画素数の格納先のポインタ (nullptr なら格納しない).
-  ///   @param pHeight 読みだした画像ファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない).
-  ///   @param internal glTexImage2D() に指定するテクスチャの内部フォーマット.
-  ///   @return テクスチャの作成に成功すればテクスチャ名, 失敗すれば 0.
+  /// TGA 画像ファイルの高さマップ読み込んで法線マップのテクスチャを作成する.
+  ///
+  /// @param name 読み込むファイル名.
+  /// @param nz 法線の z 成分の割合.
+  /// @param pWidth 読みだした画像ファイルの横の画素数の格納先のポインタ (nullptr なら格納しない).
+  /// @param pHeight 読みだした画像ファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない).
+  /// @param internal glTexImage2D() に指定するテクスチャの内部フォーマット.
+  /// @return テクスチャの作成に成功すればテクスチャ名, 失敗すれば 0.
   ///
   extern GLuint ggLoadHeight(
     const std::string& name,
@@ -4768,17 +5097,18 @@ namespace gg
     GLenum internal = GL_RGBA
   );
 
-  /// @brief シェーダのソースプログラムの文字列を読み込んでプログラムオブジェクトを作成する.
   ///
-  ///   @param vsrc バーテックスシェーダのソースプログラムの文字列.
-  ///   @param fsrc フラグメントシェーダのソースプログラムの文字列 (nullptr なら不使用).
-  ///   @param gsrc ジオメトリシェーダのソースプログラムの文字列 (nullptr なら不使用).
-  ///   @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
-  ///   @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
-  ///   @param vtext バーテックスシェーダのコンパイル時のメッセージに追加する文字列.
-  ///   @param ftext フラグメントシェーダのコンパイル時のメッセージに追加する文字列.
-  ///   @param gtext ジオメトリシェーダのコンパイル時のメッセージに追加する文字列.
-  ///   @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
+  /// シェーダのソースプログラムの文字列を読み込んでプログラムオブジェクトを作成する.
+  ///
+  /// @param vsrc バーテックスシェーダのソースプログラムの文字列.
+  /// @param fsrc フラグメントシェーダのソースプログラムの文字列 (空文字列なら不使用).
+  /// @param gsrc ジオメトリシェーダのソースプログラムの文字列 (空文字列なら不使用).
+  /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+  /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+  /// @param vtext バーテックスシェーダのコンパイル時のメッセージに追加する文字列.
+  /// @param ftext フラグメントシェーダのコンパイル時のメッセージに追加する文字列.
+  /// @param gtext ジオメトリシェーダのコンパイル時のメッセージに追加する文字列.
+  /// @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
   ///
   extern GLuint ggCreateShader(
     const std::string& vsrc,
@@ -4790,14 +5120,15 @@ namespace gg
     const std::string& ftext = "fragment shader",
     const std::string& gtext = "geometry shader");
 
-  /// @brief シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
   ///
-  ///   @param vert バーテックスシェーダのソースファイル名.
-  ///   @param frag フラグメントシェーダのソースファイル名 (nullptr なら不使用).
-  ///   @param geom ジオメトリシェーダのソースファイル名 (nullptr なら不使用).
-  ///   @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
-  ///   @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
-  ///   @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
+  /// シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
+  ///
+  /// @param vert バーテックスシェーダのソースファイル名.
+  /// @param frag フラグメントシェーダのソースファイル名 (空文字列なら不使用).
+  /// @param geom ジオメトリシェーダのソースファイル名 (空文字列なら不使用).
+  /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+  /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+  /// @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
   ///
   extern GLuint ggLoadShader(
     const std::string& vert,
@@ -4807,29 +5138,50 @@ namespace gg
     const char* const* varyings = nullptr
   );
 
-#if !defined(__APPLE__)
-  /// @brief コンピュートシェーダのソースプログラムの文字列を読み込んでプログラムオブジェクトを作成する.
   ///
-  ///   @param csrc コンピュートシェーダのソースプログラムの文字列.
-  ///   @param ctext コンピュートシェーダのコンパイル時のメッセージに追加する文字列.
-  ///   @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
+  /// シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
+  ///
+  /// @param files バーテックスシェーダのソースファイル名の配列.
+  /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+  /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+  /// @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
+  ///
+  inline GLuint ggLoadShader(
+    const std::array<std::string, 3>& files,
+    GLint nvarying = 0,
+    const char* const* varyings = nullptr
+  )
+  {
+    return ggLoadShader(files[0], files[1], files[2], nvarying, varyings);
+  }
+
+#if !defined(__APPLE__)
+  ///
+  /// コンピュートシェーダのソースプログラムの文字列を読み込んでプログラムオブジェクトを作成する.
+  ///
+  /// @param csrc コンピュートシェーダのソースプログラムの文字列.
+  /// @param ctext コンピュートシェーダのコンパイル時のメッセージに追加する文字列.
+  /// @return プログラムオブジェクトのプログラム名 (作成できなければ 0).
   ///
   extern GLuint ggCreateComputeShader(
     const std::string& csrc,
     const std::string& ctext = "compute shader"
   );
 
-  /// @brief コンピュートシェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
   ///
-  ///   @param comp コンピュートシェーダのソースファイル名.
-  ///   @returnプログラムオブジェクトのプログラム名 (作成できなければ 0).
+  /// コンピュートシェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
+  ///
+  /// @param comp コンピュートシェーダのソースファイル名.
+  /// @returnプログラムオブジェクトのプログラム名 (作成できなければ 0).
   ///
   extern GLuint ggLoadComputeShader(const std::string& comp);
 #endif
 
-  /// @brief テクスチャ.
   ///
-  ///   画像データを読み込んでテクスチャマップを作成する.
+  /// テクスチャ.
+  ///
+  /// @note
+  /// 画像データを読み込んでテクスチャマップを作成する.
   ///
   class GgTexture
   {
@@ -4841,93 +5193,132 @@ namespace gg
 
   public:
 
-    /// @brief メモリ上のデータからテクスチャを作成するコンストラクタ.
-    ///   @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
-    ///   @param width テクスチャの横の画素数.
-    ///   @param height テクスチャの縦の画素数.
-    ///   @param format 読み込む画像のフォーマット.
-    ///   @param type 画像のデータ型.
-    ///   @param internal テクスチャの内部フォーマット.
-    ///   @param wrap テクスチャのラッピングモード, デフォルトは GL_CLAMP_TO_EDGE.
+    ///
+    /// メモリ上のデータからテクスチャを作成するコンストラクタ.
+    ///
+    /// @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    /// @param width テクスチャの横の画素数.
+    /// @param height テクスチャの縦の画素数.
+    /// @param format 読み込む画像のフォーマット.
+    /// @param type 画像のデータ型.
+    /// @param internal テクスチャの内部フォーマット.
+    /// @param wrap テクスチャのラッピングモード, デフォルトは GL_CLAMP_TO_EDGE.
+    /// @param swizzle true ならテクスチャの赤と青を入れ替える, デフォルトは true.
+    ///
     GgTexture(
       const GLvoid* image,
       GLsizei width,
       GLsizei height,
-      GLenum format = GL_BGR,
+      GLenum format = GL_RGB,
       GLenum type = GL_UNSIGNED_BYTE,
       GLenum internal = GL_RGBA,
-      GLenum wrap = GL_CLAMP_TO_EDGE
-    )
-      : texture{ ggLoadTexture(image, width, height, format, type, internal, wrap) }
-      , size{ width, height }
+      GLenum wrap = GL_CLAMP_TO_EDGE,
+      bool swizzle = true
+    ) :
+      texture{ ggLoadTexture(image, width, height, format, type, internal, wrap, swizzle) },
+      size{ width, height }
     {
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgTexture()
     {
       glBindTexture(GL_TEXTURE_2D, 0);
       glDeleteTextures(1, &texture);
     }
 
-    /// @brief コピーコンストラクタは使用禁止.
+    ///
+    /// コピーコンストラクタは使用禁止.
+    ///
     GgTexture(const GgTexture& o) = delete;
 
-    /// @brief 代入演算子は使用禁止.
+    ///
+    /// 代入演算子は使用禁止.
+    ///
     GgTexture& operator=(const GgTexture& o) = delete;
 
-    /// @brief テクスチャの使用開始 (このテクスチャを使用する際に呼び出す).
+    ///
+    /// テクスチャの使用開始 (このテクスチャを使用する際に呼び出す).
+    ///
     void bind() const
     {
       glBindTexture(GL_TEXTURE_2D, texture);
     }
 
-    /// @brief テクスチャの使用終了 (このテクスチャを使用しなくなったら呼び出す).
+    ///
+    /// テクスチャの使用終了 (このテクスチャを使用しなくなったら呼び出す).
+    ///
     void unbind() const
     {
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    /// @brief 使用しているテクスチャの横の画素数を取り出す.
-    ///   @return テクスチャの横の画素数.
+    ///
+    /// テクスチャの赤と青を交換する
+    ///
+    /// @param swizzle 赤と青を交換するなら true
+    ///
+    void swapRandB(bool swizzle) const;
+
+    ///
+    /// 使用しているテクスチャの横の画素数を取り出す.
+    ///
+    /// @return テクスチャの横の画素数.
+    ///
     const GLsizei& getWidth() const
     {
       return size[0];
     }
 
-    /// @brief 使用しているテクスチャの縦の画素数を取り出す.
-    ///   @return テクスチャの縦の画素数.
+    ///
+    /// 使用しているテクスチャの縦の画素数を取り出す.
+    ///
+    /// @return テクスチャの縦の画素数.
+    ///
     const GLsizei& getHeight() const
     {
       return size[1];
     }
 
-    /// @brief 使用しているテクスチャのサイズを取り出す.
-    ///   @param size テクスチャのサイズを格納する GLsizei 型の 2 要素の配列変数.
+    ///
+    /// 使用しているテクスチャのサイズを取り出す.
+    ///
+    /// @param size テクスチャのサイズを格納する GLsizei 型の 2 要素の配列変数.
+    ///
     void getSize(GLsizei* size) const
     {
       size[0] = getWidth();
       size[1] = getHeight();
     }
 
-    /// @brief 使用しているテクスチャのサイズを取り出す.
-    ///   @return テクスチャのサイズを格納した配列へのポインタ.
+    ///
+    /// 使用しているテクスチャのサイズを取り出す.
+    ///
+    /// @return テクスチャのサイズを格納した配列へのポインタ.
+    ///
     const GLsizei* getSize() const
     {
       return size;
     }
 
-    /// @brief 使用しているテクスチャのテクスチャ名を得る.
-    ///   @return テクスチャ名.
+    ///
+    /// 使用しているテクスチャのテクスチャ名を得る.
+    ///
+    /// @return テクスチャ名.
+    ///
     const GLuint& getTexture() const
     {
       return texture;
     }
   };
 
-  /// @brief カラーマップ.
   ///
-  ///  カラー画像を読み込んでテクスチャを作成する.
+  /// カラーマップ.
+  ///
+  /// @note
+  /// カラー画像を読み込んでテクスチャを作成する.
   ///
   class GgColorTexture
   {
@@ -4936,78 +5327,108 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
+    ///
+    /// コンストラクタ.
+    ///
     GgColorTexture()
     {
     }
 
-    /// @brief メモリ上のデータからテクスチャを作成するコンストラクタ.
-    ///   @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
-    ///   @param width 読み込む画像の横の画素数.
-    ///   @param height 読み込む画像の縦の画素数.
-    ///   @param format 読み込む画像のフォーマット.
-    ///   @param type 読み込む画像のデータ型.
-    ///   @param internal テクスチャの内部フォーマット.
-    ///   @param wrap テクスチャのラッピングモード.
+    ///
+    /// メモリ上のデータからカラーのテクスチャを作成するコンストラクタ.
+    ///
+    /// @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    /// @param width 読み込む画像の横の画素数.
+    /// @param height 読み込む画像の縦の画素数.
+    /// @param format 読み込む画像のフォーマット.
+    /// @param type 読み込む画像のデータ型.
+    /// @param internal テクスチャの内部フォーマット.
+    /// @param wrap テクスチャのラッピングモード.
+    /// @param swizzle true ならテクスチャの赤と青を入れ替える, デフォルトは true.
+    ///
     GgColorTexture(
       const GLvoid* image,
       GLsizei width,
       GLsizei height,
-      GLenum format = GL_BGR,
+      GLenum format = GL_RGB,
       GLenum type = GL_UNSIGNED_BYTE,
       GLenum internal = GL_RGB,
-      GLenum wrap = GL_CLAMP_TO_EDGE
+      GLenum wrap = GL_CLAMP_TO_EDGE,
+      bool swizzle = true
     )
     {
-      load(image, width, height, format, type, internal, wrap);
+      load(image, width, height, format, type, internal, wrap, swizzle);
     }
 
-    /// @brief ファイルからデータを読み込んでテクスチャを作成するコンストラクタ.
-    ///   @param name 読み込むファイル名.
-    ///   @param internal glTexImage2D() に指定するテクスチャの内部フォーマット, 0 なら外部フォーマットに合わせる.
-    ///   @param wrap テクスチャのラッピングモード, GL_TEXTURE_WRAP_S および GL_TEXTURE_WRAP_T に設定する値.
-    GgColorTexture(const std::string& name, GLenum internal = 0, GLenum wrap = GL_CLAMP_TO_EDGE)
+    ///
+    /// TGA フォーマットの画像ファイルを読み込んでカラーのテクスチャを作成するコンストラクタ.
+    ///
+    /// @param name 読み込むファイル名.
+    /// @param internal glTexImage2D() に指定するテクスチャの内部フォーマット, 0 なら外部フォーマットに合わせる.
+    /// @param wrap テクスチャのラッピングモード, GL_TEXTURE_WRAP_S および GL_TEXTURE_WRAP_T に設定する値.
+    ///
+    GgColorTexture(
+      const std::string& name,
+      GLenum internal = 0,
+      GLenum wrap = GL_CLAMP_TO_EDGE
+    )
     {
       load(name, internal, wrap);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgColorTexture()
     {
     }
 
-    /// @brief テクスチャを作成してメモリ上のデータを読み込む.
-    ///   @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
-    ///   @param width テクスチャの横の画素数.
-    ///   @param height テクスチャの縦の画素数.
-    ///   @param format 読み込む画像のフォーマット.
-    ///   @param type 読み込む画像のデータ型.
-    ///   @param internal glTexImage2D() に指定するテクスチャの内部フォーマット.
-    ///   @param wrap テクスチャのラッピングモード (GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_REPEAT, GL_MIRRORED_REPEAT).
+    ///
+    /// メモリ上のデータを読み込んでテクスチャを作成する.
+    ///
+    /// @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    /// @param width テクスチャの横の画素数.
+    /// @param height テクスチャの縦の画素数.
+    /// @param format 読み込む画像のフォーマット.
+    /// @param type 読み込む画像のデータ型.
+    /// @param internal glTexImage2D() に指定するテクスチャの内部フォーマット.
+    /// @param wrap テクスチャのラッピングモード (GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_REPEAT, GL_MIRRORED_REPEAT).
+    /// @param swizzle true ならテクスチャの赤と青を入れ替える, デフォルトは true.
+    ///
     void load(
       const GLvoid* image,
       GLsizei width,
       GLsizei height,
-      GLenum format = GL_BGR,
+      GLenum format = GL_RGB,
       GLenum type = GL_UNSIGNED_BYTE,
       GLenum internal = GL_RGB,
-      GLenum wrap = GL_CLAMP_TO_EDGE
+      GLenum wrap = GL_CLAMP_TO_EDGE,
+      bool swizzle = true
     )
     {
       // テクスチャを作成する
-      texture.reset(new GgTexture(image, width, height, format, type, internal, wrap));
+      texture = std::make_shared<GgTexture>(image, width, height, format, type, internal, wrap, swizzle);
     }
 
-    /// @brief テクスチャを作成してファイルからデータを読み込む.
-    ///   @param name 読み込むファイル名.
-    ///   @param internal glTexImage2D() に指定するテクスチャの内部フォーマット, 0 ならファイルの画像フォーマットに合わせる.
-    ///   @param wrap テクスチャのラッピングモード (GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_REPEAT, GL_MIRRORED_REPEAT).
-    void load(const std::string& name, GLenum internal = 0, GLenum wrap = GL_CLAMP_TO_EDGE);
+    ///
+    /// TGA フォーマットの画像ファイルを読み込んでカラーのテクスチャを作成する.
+    ///
+    /// @param name 読み込むファイル名.
+    /// @param internal glTexImage2D() に指定するテクスチャの内部フォーマット, 0 ならファイルの画像フォーマットに合わせる.
+    /// @param wrap テクスチャのラッピングモード (GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_REPEAT, GL_MIRRORED_REPEAT).
+    ///
+    void load(
+      const std::string& name,
+      GLenum internal = 0,
+      GLenum wrap = GL_CLAMP_TO_EDGE
+    );
   };
 
-  /// @brief 法線マップ.
   ///
-  ///   高さマップ（グレイスケール画像）を読み込んで法線マップのテクスチャを作成する.
+  /// 法線マップ.
+  ///
+  /// @note
+  /// 高さマップ（グレイスケール画像）を読み込んで法線マップのテクスチャを作成する.
   ///
   class GgNormalTexture
   {
@@ -5016,18 +5437,23 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
+    ///
+    /// コンストラクタ.
+    ///
     GgNormalTexture()
     {
     }
 
-    /// @brief メモリ上のデータから法線マップのテクスチャを作成するコンストラクタ.
-    ///   @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
-    ///   @param width テクスチャとして用いる画像データの横幅.
-    ///   @param height テクスチャとして用いる画像データの高さ.
-    ///   @param format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA).
-    ///   @param nz 法線マップの z 成分の値.
-    ///   @param internal テクスチャの内部フォーマット.
+    ///
+    /// メモリ上のデータから法線マップのテクスチャを作成するコンストラクタ.
+    ///
+    /// @param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    /// @param width テクスチャとして用いる画像データの横幅.
+    /// @param height テクスチャとして用いる画像データの高さ.
+    /// @param format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA).
+    /// @param nz 法線マップの z 成分の値.
+    /// @param internal テクスチャの内部フォーマット.
+    ///
     GgNormalTexture(
       const GLubyte* image,
       GLsizei width,
@@ -5041,10 +5467,13 @@ namespace gg
       load(image, width, height, format, nz, internal);
     }
 
-    /// @brief ファイルからデータを読み込んで法線マップのテクスチャを作成するコンストラクタ.
-    ///   @param name 画像ファイル名.
-    ///   @param nz 法線マップの z 成分の値.
-    ///   @param internal テクスチャの内部フォーマット.
+    ///
+    /// ファイルからデータを読み込んで法線マップのテクスチャを作成するコンストラクタ.
+    ///
+    /// @param name 画像ファイル名.
+    /// @param nz 法線マップの z 成分の値.
+    /// @param internal テクスチャの内部フォーマット.
+    ///
     GgNormalTexture(
       const std::string& name,
       GLfloat nz = 1.0f,
@@ -5055,18 +5484,23 @@ namespace gg
       load(name, nz, internal);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgNormalTexture()
     {
     }
 
-    /// @brief メモリ上のデータから法線マップのテクスチャを作成する.
-    ///   @param hmap テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
-    ///   @param width テクスチャとして用いる画像データの横幅.
-    ///   @param height テクスチャとして用いる画像データの高さ.
-    ///   @param format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA).
-    ///   @param nz 法線マップの z 成分の値.
-    ///   @param internal テクスチャの内部フォーマット.
+    ///
+    /// メモリ上のデータから法線マップのテクスチャを作成する.
+    ///
+    /// @param hmap テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    /// @param width テクスチャとして用いる画像データの横幅.
+    /// @param height テクスチャとして用いる画像データの高さ.
+    /// @param format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA).
+    /// @param nz 法線マップの z 成分の値.
+    /// @param internal テクスチャの内部フォーマット.
+    ///
     void load(
       const GLubyte* hmap,
       GLsizei width,
@@ -5083,13 +5517,16 @@ namespace gg
       ggCreateNormalMap(hmap, width, height, format, nz, internal, nmap);
 
       // テクスチャを作成する
-      texture.reset(new GgTexture(nmap.data(), width, height, GL_RGBA, GL_FLOAT, internal, GL_REPEAT));
+      texture = std::make_shared<GgTexture>(nmap.data(), width, height, GL_RGBA, GL_FLOAT, internal, GL_REPEAT);
     }
 
-    /// @brief ファイルからデータを読み込んで法線マップのテクスチャを作成する.
-    ///   @param name 画像ファイル名 (1 チャネルの TGA 画像).
-    ///   @param nz 法線マップの z 成分の値.
-    ///   @param internal テクスチャの内部フォーマット.
+    ///
+    /// TGA フォーマットの画像ファイルから高さマップ読み込んで法線マップのテクスチャを作成する.
+    ///
+    /// @param name 画像ファイル名 (1 チャネルの TGA 画像).
+    /// @param nz 法線マップの z 成分の値.
+    /// @param internal テクスチャの内部フォーマット.
+    ///
     void load(
       const std::string& name,
       GLfloat nz = 1.0f,
@@ -5097,9 +5534,11 @@ namespace gg
     );
   };
 
-  /// @brief バッファオブジェクト.
   ///
-  ///   頂点属性／頂点インデックス／ユニフォーム変数を格納するバッファオブジェクトの基底クラス.
+  /// バッファオブジェクト.
+  ///
+  /// @note
+  /// 頂点属性／頂点インデックス／ユニフォーム変数を格納するバッファオブジェクトの基底クラス.
   ///
   template <typename T>
   class GgBuffer
@@ -5118,30 +5557,35 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
-    ///   @param target バッファオブジェクトのターゲット.
-    ///   @param data データが格納されている領域の先頭のポインタ (nullptr ならデータを転送しない).
-    ///   @param count データの数.
-    ///   @param stride データの間隔.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param target バッファオブジェクトのターゲット.
+    /// @param data データが格納されている領域の先頭のポインタ (nullptr ならデータを転送しない).
+    /// @param count データの数.
+    /// @param stride データの間隔.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     GgBuffer<T>(
       GLenum target,
       const T* data,
       GLsizei stride,
       GLsizei count,
       GLenum usage
-      )
-      : target{ target }
-      , stride{ stride }
-      , count{ count }
-    , buffer{ [] { GLuint buffer; glGenBuffers(1, &buffer); return buffer; } () }
+      ) :
+      target{ target },
+      stride{ stride },
+      count{ count },
+      buffer{ [] { GLuint buffer; glGenBuffers(1, &buffer); return buffer; } () }
     {
       // バッファオブジェクトのメモリを確保してデータを転送する
       glBindBuffer(target, buffer);
-      glBufferData(target, getStride() * count, data, usage);
+      glBufferData(target, getStride()* count, data, usage);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgBuffer<T>()
     {
       // バッファオブジェクトを削除する
@@ -5149,54 +5593,77 @@ namespace gg
       glDeleteBuffers(1, &buffer);
     }
 
+    ///
     /// コピーコンストラクタは使用禁止.
+    ///
     GgBuffer<T>(const GgBuffer<T>& o) = delete;
 
-    /// @brief 代入演算子は使用禁止.
+    ///
+    /// 代入演算子は使用禁止.
+    ///
     GgBuffer<T>& operator=(const GgBuffer<T>& o) = delete;
 
-    /// @brief バッファオブジェクトのターゲットを取り出す.
-    ///   @return このバッファオブジェクトのターゲット.
+    ///
+    /// バッファオブジェクトのターゲットを取り出す.
+    ///
+    /// @return このバッファオブジェクトのターゲット.
+    ///
     const GLuint& getTarget() const
     {
       return target;
     }
 
-    /// @brief バッファオブジェクトのアライメントを考慮したデータの間隔を取り出す.
-    ///   @return このバッファオブジェクトのデータの間隔.
+    ///
+    /// バッファオブジェクトのアライメントを考慮したデータの間隔を取り出す.
+    ///
+    /// @return このバッファオブジェクトのデータの間隔.
+    ///
     GLsizeiptr getStride() const
     {
       return static_cast<GLsizeiptr>(stride);
     }
 
-    /// @brief バッファオブジェクトが保持するデータの数を取り出す.
-    ///   @return このバッファオブジェクトが保持するデータの数.
+    ///
+    /// バッファオブジェクトが保持するデータの数を取り出す.
+    ///
+    /// @return このバッファオブジェクトが保持するデータの数.
+    ///
     const GLsizei& getCount() const
     {
       return count;
     }
 
-    /// @brief バッファオブジェクト名を取り出す.
-    ///   @return このバッファオブジェクト名.
+    ///
+    /// バッファオブジェクト名を取り出す.
+    ///
+    /// @return このバッファオブジェクト名.
+    ///
     const GLuint& getBuffer() const
     {
       return buffer;
     }
 
-    /// @brief バッファオブジェクトを結合する.
+    ///
+    /// バッファオブジェクトを結合する.
+    ///
     void bind() const
     {
       glBindBuffer(target, buffer);
     }
 
-    /// @brief バッファオブジェクトを解放する.
+    ///
+    /// バッファオブジェクトを解放する.
+    ///
     void unbind() const
     {
       glBindBuffer(target, 0);
     }
 
-    /// @brief バッファオブジェクトをマップする.
-    ///   @return マップしたメモリの先頭のポインタ.
+    ///
+    /// バッファオブジェクトをマップする.
+    ///
+    /// @return マップしたメモリの先頭のポインタ.
+    ///
     void* map() const
     {
       glBindBuffer(target, buffer);
@@ -5207,10 +5674,13 @@ namespace gg
 #endif
     }
 
-    /// @brief バッファオブジェクトの指定した範囲をマップする.
-    ///   @param first マップする範囲のバッファオブジェクトの先頭からの位置.
-    ///   @param count マップするデータの数 (0 ならバッファオブジェクト全体).
-    ///   @return マップしたメモリの先頭のポインタ.
+    ///
+    /// バッファオブジェクトの指定した範囲をマップする.
+    ///
+    /// @param first マップする範囲のバッファオブジェクトの先頭からの位置.
+    /// @param count マップするデータの数 (0 ならバッファオブジェクト全体).
+    /// @return マップしたメモリの先頭のポインタ.
+    ///
     void* map(GLint first, GLsizei count) const
     {
       // count が 0 なら全データをマップする
@@ -5221,16 +5691,21 @@ namespace gg
       return glMapBufferRange(target, getStride() * first, getStride() * count, GL_MAP_WRITE_BIT);
     }
 
-    /// @brief バッファオブジェクトをアンマップする.
+    ///
+    /// バッファオブジェクトをアンマップする.
+    ///
     void unmap() const
     {
       glUnmapBuffer(target);
     }
 
-    /// @brief すでに確保したバッファオブジェクトにデータを転送する.
-    ///   @param data 転送元のデータが格納されてている領域の先頭のポインタ.
-    ///   @param first 転送先のバッファオブジェクトの先頭の要素番号.
-    ///   @param count 転送するデータの数 (0 ならバッファオブジェクト全体).
+    ///
+    /// すでに確保したバッファオブジェクトにデータを転送する.
+    ///
+    /// @param data 転送元のデータが格納されている領域の先頭のポインタ.
+    /// @param first 転送先のバッファオブジェクトの先頭の要素番号.
+    /// @param count 転送するデータの数 (0 ならバッファオブジェクト全体).
+    ///
     void send(const T* data, GLint first, GLsizei count) const
     {
       // count が 0 なら全データを転送する
@@ -5242,10 +5717,13 @@ namespace gg
       glBufferSubData(target, getStride() * first, getStride() * count, data);
     }
 
-    /// @brief バッファオブジェクトのデータから抽出する.
-    ///   @param data 抽出先の領域の先頭のポインタ.
-    ///   @param first 抽出元のバッファオブジェクトの取り出すデータの領域の先頭の要素番号.
-    ///   @param count 抽出するデータの数 (0 ならバッファオブジェクト全体).
+    ///
+    /// バッファオブジェクトのデータから抽出する.
+    ///
+    /// @param data 抽出先の領域の先頭のポインタ.
+    /// @param first 抽出元のバッファオブジェクトの取り出すデータの領域の先頭の要素番号.
+    /// @param count 抽出するデータの数 (0 ならバッファオブジェクト全体).
+    ///
     void read(T* data, GLint first, GLsizei count) const
     {
       // count が 0 なら全データを抽出する
@@ -5257,7 +5735,7 @@ namespace gg
 #if defined(GL_GLES_PROTOTYPES)
       const GLsizeiptr begin{ getStride() * first };
       const GLsizeiptr range{ getStride() * count };
-      T *const source{ glMapBufferRange(target, begin, range, GL_MAP_READ_BIT) };
+      T* const source{ glMapBufferRange(target, begin, range, GL_MAP_READ_BIT) };
       std::copy(source, source + count, data);
       glUnmapBuffer(target);
 #else
@@ -5265,11 +5743,14 @@ namespace gg
 #endif
     }
 
-    /// @brief 別のバッファオブジェクトからデータを複写する.
-    ///   @param src_buffer 複写元のバッファオブジェクト名.
-    ///   @param src_first 複写元 (src_buffer) の先頭のデータの位置.
-    ///   @param dst_first 複写先 (getBuffer()) の先頭のデータの位置.
-    ///   @param count 複写するデータの数 (0 ならバッファオブジェクト全体).
+    ///
+    /// 別のバッファオブジェクトからデータを複写する.
+    ///
+    /// @param src_buffer 複写元のバッファオブジェクト名.
+    /// @param src_first 複写元 (src_buffer) の先頭のデータの位置.
+    /// @param dst_first 複写先 (getBuffer()) の先頭のデータの位置.
+    /// @param count 複写するデータの数 (0 ならバッファオブジェクト全体).
+    ///
     void copy(GLuint src_buffer, GLint src_first = 0, GLint dst_first = 0, GLsizei count = 0) const
     {
       // count が 0 なら全データを複写する
@@ -5289,9 +5770,11 @@ namespace gg
     }
   };
 
-  /// @brief ユニフォームバッファオブジェクト.
   ///
-  ///   ユニフォーム変数を格納するバッファオブジェクトの基底クラス.
+  /// ユニフォームバッファオブジェクト.
+  ///
+  /// @note
+  /// ユニフォーム変数を格納するバッファオブジェクトの基底クラス.
   ///
   template <typename T>
   class GgUniformBuffer
@@ -5301,134 +5784,177 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
+    ///
+    /// コンストラクタ.
+    ///
     GgUniformBuffer<T>()
     {
     }
 
-    /// @brief ユニフォームバッファオブジェクトのブロックごとにデータを転送するコンストラクタ.
-    ///   @param data データが格納されている領域の先頭のポインタ (nullptr ならデータを転送しない).
-    ///   @param count データの数.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// ユニフォームバッファオブジェクトのブロックごとにデータを転送するコンストラクタ.
+    ///
+    /// @param data データが格納されている領域の先頭のポインタ (nullptr ならデータを転送しない).
+    /// @param count データの数.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     GgUniformBuffer<T>(const T* data, GLsizei count, GLenum usage = GL_STATIC_DRAW)
     {
       load(data, count, usage);
     }
 
-    /// @brief ユニフォームバッファオブジェクトの全ブロックに同じデータを格納するコンストラクタ.
-    ///   @param data 格納するデータ.
-    ///   @param count 格納する数.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// ユニフォームバッファオブジェクトの全ブロックに同じデータを格納するコンストラクタ.
+    ///
+    /// @param data 格納するデータ.
+    /// @param count 格納する数.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     GgUniformBuffer<T>(const T& data, GLsizei count, GLenum usage = GL_STATIC_DRAW)
     {
       load(data, count, usage);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgUniformBuffer<T>()
     {
     }
 
-    /// @brief ユニフォームバッファオブジェクトのターゲットを取り出す.
-    ///   @return このユニフォームバッファオブジェクトのターゲット.
+    ///
+    /// ユニフォームバッファオブジェクトのターゲットを取り出す.
+    ///
+    /// @return このユニフォームバッファオブジェクトのターゲット.
+    ///
     const GLuint& getTarget() const
     {
       return uniform->getTarget();
     }
 
-    /// @brief ユニフォームバッファオブジェクトのアライメントを考慮したデータの間隔を取り出す.
-    ///   @return このユニフォームバッファオブジェクトのデータの間隔.
+    ///
+    /// ユニフォームバッファオブジェクトのアライメントを考慮したデータの間隔を取り出す.
+    ///
+    /// @return このユニフォームバッファオブジェクトのデータの間隔.
+    ///
     GLsizeiptr getStride() const
     {
       return uniform->getStride();
     }
 
-    /// @brief データの数を取り出す.
-    ///   @return このユニフォームバッファオブジェクトのデータの数.
+    ///
+    /// データの数を取り出す.
+    ///
+    /// @return このユニフォームバッファオブジェクトのデータの数.
+    ///
     const GLsizei& getCount() const
     {
       return uniform->getCount();
     }
 
-    /// @brief ユニフォームバッファオブジェクト名を取り出す.
-    ///   @return このユニフォームバッファオブジェクト名.
+    ///
+    /// ユニフォームバッファオブジェクト名を取り出す.
+    ///
+    /// @return このユニフォームバッファオブジェクト名.
+    ///
     const GLuint& getBuffer() const
     {
       return uniform->getBuffer();
     }
 
-    /// @brief ユニフォームバッファオブジェクトを結合する.
+    ///
+    /// ユニフォームバッファオブジェクトを結合する.
+    ///
     void bind() const
     {
       uniform->bind();
     }
 
-    /// @brief ユニフォームバッファオブジェクトを解放する.
+    ///
+    /// ユニフォームバッファオブジェクトを解放する.
+    ///
     void unbind() const
     {
       uniform->unbind();
     }
 
-    /// @brief ユニフォームバッファオブジェクトをマップする.
-    ///   @return マップしたメモリの先頭のポインタ.
+    ///
+    /// ユニフォームバッファオブジェクトをマップする.
+    ///
+    /// @return マップしたメモリの先頭のポインタ.
+    ///
     void* map() const
     {
       return uniform->map();
     }
 
-    /// @brief ユニフォームバッファオブジェクトの指定した範囲をマップする.
-    ///   @param first マップする範囲のバッファオブジェクトの先頭からの位置.
-    ///   @param count マップするデータの数 (0 ならバッファオブジェクト全体).
-    ///   @return マップしたメモリの先頭のポインタ.
+    ///
+    /// ユニフォームバッファオブジェクトの指定した範囲をマップする.
+    ///
+    /// @param first マップする範囲のバッファオブジェクトの先頭からの位置.
+    /// @param count マップするデータの数 (0 ならバッファオブジェクト全体).
+    /// @return マップしたメモリの先頭のポインタ.
+    ///
     void* map(GLint first, GLsizei count) const
     {
       return uniform->map(first, count);
     }
 
-    /// @brief バッファオブジェクトをアンマップする.
+    ///
+    /// バッファオブジェクトをアンマップする.
+    ///
     void unmap() const
     {
       uniform->unmap();
     }
 
-    /// @brief ユニフォームバッファオブジェクトを確保してブロックごとにデータを転送する.
-    ///   @param data データが格納されている領域の先頭のポインタ (nullptr ならデータを転送しない).
-    ///   @param count データの数.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// ユニフォームバッファオブジェクトを確保してブロックごとにデータを転送する.
+    ///
+    /// @param data データが格納されている領域の先頭のポインタ (nullptr ならデータを転送しない).
+    /// @param count データの数.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     void load(const T* data, GLsizei count, GLenum usage = GL_STATIC_DRAW)
     {
       // バッファオブジェクト上のデータの間隔
       const GLsizei stride{ (((static_cast<GLint>(sizeof(T)) - 1) / ggBufferAlignment) + 1) * ggBufferAlignment };
 
       // ユニフォームバッファオブジェクトを確保する
-      uniform.reset(new GgBuffer<T>(GL_UNIFORM_BUFFER, nullptr, stride, count, usage));
+      uniform = std::make_shared<GgBuffer<T>>(GL_UNIFORM_BUFFER, nullptr, stride, count, usage);
 
       // 確保したユニフォームバッファオブジェクトにデータを転送する
       if (data) send(data, 0, sizeof(T), 0, count);
     }
 
-    /// @brief ユニフォームバッファオブジェクトを確保して全てのブロックに同じデータを格納する.
-    ///   @param data 格納するデータ.
-    ///   @param count 格納する数.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// ユニフォームバッファオブジェクトを確保して全てのブロックに同じデータを格納する.
+    ///
+    /// @param data 格納するデータ.
+    /// @param count 格納する数.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     void load(const T& data, GLsizei count, GLenum usage = GL_STATIC_DRAW)
     {
       // バッファオブジェクト上のデータの間隔
       const GLsizei stride{ (((static_cast<GLint>(sizeof(T)) - 1) / ggBufferAlignment) + 1) * ggBufferAlignment };
 
       // ユニフォームバッファオブジェクトを確保する
-      uniform.reset(new GgBuffer<T>(GL_UNIFORM_BUFFER, nullptr, stride, count, usage));
+      uniform = std::make_shared<GgBuffer<T>>(GL_UNIFORM_BUFFER, nullptr, stride, count, usage);
 
       // 確保したユニフォームバッファオブジェクトにデータを転送する
       fill(&data, 0, sizeof(T), 0, count);
     }
 
-    /// @brief ユニフォームバッファオブジェクトを確保してユニフォームバッファオブジェクトのブロックごとのメンバを同じデータで埋める.
-    ///   @param data データが格納されている領域の先頭のポインタ.
-    ///   @param offset 格納先のメンバのブロックの先頭からのバイトオフセット.
-    ///   @param size 格納するデータの一個あたりのバイト数.
-    ///   @param first 格納先のバッファオブジェクトのブロックの先頭の番号.
-    ///   @param count 格納するデータの数.
+    ///
+    /// ユニフォームバッファオブジェクトを確保してユニフォームバッファオブジェクトのブロックごとのメンバを同じデータで埋める.
+    ///
+    /// @param data データが格納されている領域の先頭のポインタ.
+    /// @param offset 格納先のメンバのブロックの先頭からのバイトオフセット.
+    /// @param size 格納するデータの一個あたりのバイト数.
+    /// @param first 格納先のバッファオブジェクトのブロックの先頭の番号.
+    /// @param count 格納するデータの数.
+    ///
     void send(
       const GLvoid* data,
       GLint offset = 0,
@@ -5458,12 +5984,15 @@ namespace gg
       }
     }
 
-    /// @brief ユニフォームバッファオブジェクトの全ブロックのメンバーを同じデータを格納する.
-    ///   @param data 格納するデータ.
-    ///   @param offset 格納先のメンバのブロックの先頭からのバイトオフセット.
-    ///   @param size 格納するデータの一個あたりのバイト数.
-    ///   @param first 格納先のバッファオブジェクトのブロックの先頭の番号.
-    ///   @param count 格納するデータの数.
+    ///
+    /// ユニフォームバッファオブジェクトの全ブロックのメンバーを同じデータを格納する.
+    ///
+    /// @param data 格納するデータ.
+    /// @param offset 格納先のメンバのブロックの先頭からのバイトオフセット.
+    /// @param size 格納するデータの一個あたりのバイト数.
+    /// @param first 格納先のバッファオブジェクトのブロックの先頭の番号.
+    /// @param count 格納するデータの数.
+    ///
     void fill(
       const GLvoid* data,
       GLint offset = 0,
@@ -5490,12 +6019,15 @@ namespace gg
       }
     }
 
-    /// @brief ユニフォームバッファオブジェクトからデータを抽出する.
-    ///   @param data 抽出先の領域の先頭のポインタ.
-    ///   @param offset 抽出元のユニフォームバッファオブジェクトのメンバのブロックの先頭からのバイトオフセット.
-    ///   @param size 抽出するデータの一個あたりのバイト数.
-    ///   @param first 抽出元のユニフォームバッファオブジェクトのブロックの先頭の番号.
-    ///   @param count 抽出するデータの数 (0 ならユニフォームバッファオブジェクト全体).
+    ///
+    /// ユニフォームバッファオブジェクトからデータを抽出する.
+    ///
+    /// @param data 抽出先の領域の先頭のポインタ.
+    /// @param offset 抽出元のユニフォームバッファオブジェクトのメンバのブロックの先頭からのバイトオフセット.
+    /// @param size 抽出するデータの一個あたりのバイト数.
+    /// @param first 抽出元のユニフォームバッファオブジェクトのブロックの先頭の番号.
+    /// @param count 抽出するデータの数 (0 ならユニフォームバッファオブジェクト全体).
+    ///
     void read(
       GLvoid* data,
       GLint offset = 0,
@@ -5520,11 +6052,11 @@ namespace gg
       // データをユニフォームバッファオブジェクトから抽出する
       bind();
 #if defined(GL_GLES_PROTOTYPES)
-      const char *const source{ glMapBufferRange(target, stride * first, stride * count, GL_MAP_READ_BIT) };
+      const char* const source{ glMapBufferRange(target, stride * first, stride * count, GL_MAP_READ_BIT) };
       for (GLsizei i = 0; i < count; ++i)
       {
-        const char *const begin{ source + stride * i + offset };
-        const char *const end{ begin + size };
+        const char* const begin{ source + stride * i + offset };
+        const char* const end{ begin + size };
         std::copy(begin, end, destination + sizeof(T) * i);
       }
       glUnmapBuffer(target);
@@ -5536,11 +6068,14 @@ namespace gg
 #endif
     }
 
-    /// @brief 別のバッファオブジェクトからデータを複写する.
-    ///   @param src_buffer 複写元のバッファオブジェクト名.
-    ///   @param src_first 複写元 (buffer) の先頭のデータの位置.
-    ///   @param dst_first 複写先 (getBuffer()) の先頭のデータの位置.
-    ///   @param count 複写するデータの数 (0 ならバッファオブジェクト全体).
+    ///
+    /// 別のバッファオブジェクトからデータを複写する.
+    ///
+    /// @param src_buffer 複写元のバッファオブジェクト名.
+    /// @param src_first 複写元 (buffer) の先頭のデータの位置.
+    /// @param dst_first 複写先 (getBuffer()) の先頭のデータの位置.
+    /// @param count 複写するデータの数 (0 ならバッファオブジェクト全体).
+    ///
     void copy(
       GLuint src_buffer,
       GLint src_first = 0,
@@ -5569,74 +6104,164 @@ namespace gg
     }
   };
 
-  /// @brief 形状データの基底クラス.
   ///
-  ///   形状データのクラスはこのクラスを派生して作る.
-  ///   基本図形の種類と頂点配列オブジェクトを保持する.
+  /// 頂点配列クラス.
+  ///
+  class GgVertexArray
+  {
+    // 頂点配列オブジェクト
+    const GLuint vao;
+
+  public:
+
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param mode 基本図形の種類.
+    ///
+    GgVertexArray(GLenum mode = 0) :
+      vao{ [] { GLuint vao; glGenVertexArrays(1, &vao); return vao; } () }
+    {
+      glBindVertexArray(vao);
+    }
+
+    ///
+    /// コピーコンストラクタは使用禁止.
+    ///
+    GgVertexArray(const GgVertexArray& o) = delete;
+
+    ///
+    /// デストラクタ.
+    ///
+    virtual ~GgVertexArray()
+    {
+      glBindVertexArray(0);
+      glDeleteVertexArrays(1, &vao);
+    }
+
+    ///
+    /// 代入演算子は使用禁止.
+    ///
+    GgVertexArray& operator=(const GgVertexArray& o) = delete;
+
+    ///
+    /// 頂点配列オブジェクト名を取り出す.
+    ///
+    /// @return 頂点配列オブジェクト名.
+    ///
+    const GLuint& get() const
+    {
+      return vao;
+    }
+
+    ///
+    /// 頂点配列オブジェクトを結合する.
+    ///
+    void bind() const
+    {
+      glBindVertexArray(vao);
+    }
+  };
+
+  ///
+  /// 形状データの基底クラス.
+  ///
+  /// @note
+  /// 形状データのクラスはこのクラスを派生して作る.
+  /// 基本図形の種類と頂点配列オブジェクトを保持する.
   ///
   class GgShape
   {
     // 頂点配列オブジェクト
-    const GLuint vao;
+    std::shared_ptr<GgVertexArray> object;
 
     // 基本図形の種類
     GLenum mode;
 
   public:
 
-    /// @brief コンストラクタ.
-    ///   @param mode 基本図形の種類.
-    GgShape(GLenum mode = 0)
-      : vao{ [] { GLuint vao; glGenVertexArrays(1, &vao); return vao; } () }
-      , mode{ mode }
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param mode 基本図形の種類.
+    ///
+    GgShape(GLenum mode = 0) :
+      object{ std::make_shared<GgVertexArray>() },
+      mode{ mode }
     {
-      glBindVertexArray(vao);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgShape()
     {
-      glBindVertexArray(0);
-      glDeleteVertexArrays(1, &vao);
     }
 
-    /// @brief コピーコンストラクタは使用禁止.
-    GgShape(const GgShape& o) = delete;
+    ///
+    /// 頂点配列オブジェクトが有効かどうか調べる.
+    ///
+    /// @return 頂点配列オブジェクトが有効なら true
+    ///
+    virtual explicit operator bool() const noexcept
+    {
+      return object.get() != nullptr;
+    }
 
-    /// @brief 代入演算子は使用禁止.
-    GgShape& operator=(const GgShape& o) = delete;
+    ///
+    /// 頂点配列オブジェクトが有効かどうかの結果を反転する.
+    ///
+    /// @return 頂点配列オブジェクトが有効なら false, 無効なら true.
+    ///
+    virtual bool operator!() const noexcept
+    {
+      return !static_cast<bool>(*this);
+    }
 
-    /// @brief 頂点配列オブジェクト名を取り出す.
-    ///   @return 頂点配列オブジェクト名.
+    ///
+    /// 頂点配列オブジェクト名を取り出す.
+    ///
+    /// @return 頂点配列オブジェクト名.
+    ///
     const GLuint& get() const
     {
-      return vao;
+      return object->get();
     }
 
-    /// @brief 基本図形の設定.
-    ///   @param mode 基本図形の種類.
+    ///
+    /// 基本図形の設定.
+    ///
+    /// @param mode 基本図形の種類.
+    ///
     void setMode(GLenum mode)
     {
       this->mode = mode;
     }
 
-    /// @brief 基本図形の検査.
-    ///   @return この頂点配列オブジェクトの基本図形の種類.
+    ///
+    /// 基本図形の検査.
+    ///
+    /// @return この頂点配列オブジェクトの基本図形の種類.
+    ///
     const GLenum& getMode() const
     {
       return this->mode;
     }
 
-    /// @brief 図形の描画, 派生クラスでこの手続きをオーバーライドする.
-    ///   @param first 描画する最初のアイテム.
-    ///   @param count 描画するアイテムの数, 0 なら全部のアイテムを描画する.
+    ///
+    /// 図形の描画, 派生クラスでこの手続きをオーバーライドする.
+    ///
+    /// @param first 描画する最初のアイテム.
+    /// @param count 描画するアイテムの数, 0 なら全部のアイテムを描画する.
+    ///
     virtual void draw(GLint first = 0, GLsizei count = 0) const
     {
-      glBindVertexArray(vao);
+      object->bind();
     }
   };
 
-  /// @brief 点.
+  ///
+  /// 点.
   ///
   class GgPoints
     : public GgShape
@@ -5646,69 +6271,112 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
-    GgPoints(GLenum mode = GL_POINTS)
-      : GgShape(mode)
+    ///
+    /// コンストラクタ.
+    ///
+    GgPoints(GLenum mode = GL_POINTS) :
+      GgShape(mode)
     {
     }
 
-    /// @brief コンストラクタ.
-    ///   @param pos この図形の頂点の位置のデータの配列 (nullptr ならデータを転送しない).
-    ///   @param countv 頂点数.
-    ///   @param mode 描画する基本図形の種類.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param pos この図形の頂点の位置のデータの配列 (nullptr ならデータを転送しない).
+    /// @param countv 頂点数.
+    /// @param mode 描画する基本図形の種類.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     GgPoints(
       const GgVector* pos,
       GLsizei countv,
       GLenum mode = GL_POINTS,
       GLenum usage = GL_STATIC_DRAW
-    )
-      : GgPoints(mode)
+    ) :
+      GgPoints(mode)
     {
       load(pos, countv, usage);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgPoints()
     {
     }
 
-    /// @brief データの数を取り出す.
-    ///   @return この図形の頂点の位置データの数 (頂点数).
+    ///
+    /// バッファが有効かどうか調べる.
+    ///
+    /// @return バッファが有効なら true
+    ///
+    explicit operator bool() const noexcept
+    {
+      return position.get() != nullptr;
+    }
+
+    ///
+    /// バッファが有効かどうかの結果を反転する.
+    ///
+    /// @return バッファが有効なら false, 無効なら true.
+    ///
+    bool operator!() const noexcept
+    {
+      return !static_cast<bool>(*this);
+    }
+
+    ///
+    /// データの数を取り出す.
+    ///
+    /// @return この図形の頂点の位置データの数 (頂点数).
+    ///
     const GLsizei& getCount() const
     {
       return position->getCount();
     }
 
-    /// @brief 頂点の位置データを格納した頂点バッファオブジェクト名を取り出す.
-    ///   @return この図形の頂点の位置データを格納した頂点バッファオブジェクト名.
+    ///
+    /// 頂点の位置データを格納した頂点バッファオブジェクト名を取り出す.
+    ///
+    /// @return この図形の頂点の位置データを格納した頂点バッファオブジェクト名.
+    ///
     const GLuint& getBuffer() const
     {
       return position->getBuffer();
     }
 
-    /// @brief 既存のバッファオブジェクトに頂点の位置データを転送する.
-    ///   @param pos 転送元の頂点の位置データが格納されてている領域の先頭のポインタ.
-    ///   @param first 転送先のバッファオブジェクトの先頭の要素番号.
-    ///   @param count 転送する頂点の位置データの数 (0 ならバッファオブジェクト全体).
+    ///
+    /// 既存のバッファオブジェクトに頂点の位置データを転送する.
+    ///
+    /// @param pos 転送元の頂点の位置データが格納されている領域の先頭のポインタ.
+    /// @param first 転送先のバッファオブジェクトの先頭の要素番号.
+    /// @param count 転送する頂点の位置データの数 (0 ならバッファオブジェクト全体).
+    ///
     void send(const GgVector* pos, GLint first = 0, GLsizei count = 0) const
     {
       position->send(pos, first, count);
     }
 
-    /// @brief バッファオブジェクトを確保して頂点の位置データを格納する.
-    ///   @param pos 頂点の位置データが格納されてている領域の先頭のポインタ.
-    ///   @param count 頂点のデータの数 (頂点数).
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// バッファオブジェクトを確保して頂点の位置データを格納する.
+    ///
+    /// @param pos 頂点の位置データが格納されている領域の先頭のポインタ.
+    /// @param count 頂点のデータの数 (頂点数).
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     void load(const GgVector* pos, GLsizei count, GLenum usage = GL_STATIC_DRAW);
 
-    /// @brief 点の描画.
-    ///   @param first 描画を開始する最初の点の番号.
-    ///   @param count 描画する点の数, 0 なら全部の点を描く.
+    ///
+    /// 点の描画.
+    ///
+    /// @param first 描画を開始する最初の点の番号.
+    /// @param count 描画する点の数, 0 なら全部の点を描く.
+    ///
     virtual void draw(GLint first = 0, GLsizei count = 0) const;
   };
 
-  /// @brief 三角形の頂点データ.
+  ///
+  /// 三角形の頂点データ.
   ///
   struct GgVertex
   {
@@ -5718,142 +6386,184 @@ namespace gg
     /// 法線.
     GgVector normal;
 
-    /// @brief コンストラクタ.
+    ///
+    /// コンストラクタ.
+    ///
     GgVertex()
     {
     }
 
-    /// @brief コンストラクタ.
-    ///   @param pos GgVector 型の位置データ.
-    ///   @param norm GgVector 型の法線データ.
-    GgVertex(const GgVector& pos, const GgVector& norm)
-      : position(pos)
-      , normal(norm)
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param pos GgVector 型の位置データ.
+    /// @param norm GgVector 型の法線データ.
+    ///
+    GgVertex(const GgVector& pos, const GgVector& norm) :
+      position(pos),
+      normal(norm)
     {
     }
 
-    /// @brief コンストラクタ.
-    ///   @param px GgVector 型の位置データの x 成分.
-    ///   @param py GgVector 型の位置データの y 成分.
-    ///   @param pz GgVector 型の位置データの z 成分.
-    ///   @param nx GgVector 型の法線データの x 成分.
-    ///   @param ny GgVector 型の法線データの y 成分.
-    ///   @param nz GgVector 型の法線データの z 成分.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param px GgVector 型の位置データの x 成分.
+    /// @param py GgVector 型の位置データの y 成分.
+    /// @param pz GgVector 型の位置データの z 成分.
+    /// @param nx GgVector 型の法線データの x 成分.
+    /// @param ny GgVector 型の法線データの y 成分.
+    /// @param nz GgVector 型の法線データの z 成分.
+    ///
     GgVertex(
       GLfloat px, GLfloat py, GLfloat pz,
       GLfloat nx, GLfloat ny, GLfloat nz
-    )
-      : position{ px, py, pz, 1.0f }
-      , normal{ nx, ny, nz, 0.0f }
+    ) :
+      position{ px, py, pz, 1.0f },
+      normal{ nx, ny, nz, 0.0f }
     {
     }
 
-    /// @brief コンストラクタ.
-    ///   @param pos 3 要素の GLfloat 型の位置データのポインタ.
-    ///   @param norm 3 要素の GLfloat 型の法線データのポインタ.
-    GgVertex(const GLfloat* pos, const GLfloat* norm)
-      : GgVertex(pos[0], pos[1], pos[2], norm[0], norm[1], norm[2])
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param pos 3 要素の GLfloat 型の位置データのポインタ.
+    /// @param norm 3 要素の GLfloat 型の法線データのポインタ.
+    ///
+    GgVertex(const GLfloat* pos, const GLfloat* norm) :
+      GgVertex(pos[0], pos[1], pos[2], norm[0], norm[1], norm[2])
     {
     }
   };
 
-  /// @brief 三角形で表した形状データ (Arrays 形式).
+  ///
+  /// 三角形で表した形状データ (Arrays 形式).
   ///
   class GgTriangles
     : public GgShape
   {
     // 頂点属性
-    std::unique_ptr<GgBuffer<GgVertex>> vertex;
+    std::shared_ptr<GgBuffer<GgVertex>> vertex;
 
   public:
 
-    /// @brief コンストラクタ.
-    ///   @param mode 描画する基本図形の種類.
-    GgTriangles(GLenum mode = GL_TRIANGLES)
-      : GgShape(mode)
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param mode 描画する基本図形の種類.
+    ///
+    GgTriangles(GLenum mode = GL_TRIANGLES) :
+      GgShape(mode)
     {
     }
 
-    /// @brief コンストラクタ.
-    ///   @param vert この図形の頂点属性の配列 (nullptr ならデータを転送しない).
-    ///   @param count 頂点数.
-    ///   @param mode 描画する基本図形の種類.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param vert この図形の頂点属性の配列 (nullptr ならデータを転送しない).
+    /// @param count 頂点数.
+    /// @param mode 描画する基本図形の種類.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     GgTriangles(
       const GgVertex* vert,
       GLsizei count,
       GLenum mode = GL_TRIANGLES,
       GLenum usage = GL_STATIC_DRAW
-    )
-      : GgTriangles(mode)
+    ) :
+      GgTriangles(mode)
     {
       load(vert, count, usage);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgTriangles()
     {
     }
 
-    /// @brief データの数を取り出す.
-    ///   @return この図形の頂点属性の数 (頂点数).
+    ///
+    /// データの数を取り出す.
+    ///
+    /// @return この図形の頂点属性の数 (頂点数).
+    ///
     const GLsizei& getCount() const
     {
       return vertex->getCount();
     }
 
-    /// @brief 頂点属性を格納した頂点バッファオブジェクト名を取り出す.
-    ///   @return この図形の頂点属性を格納した頂点バッファオブジェクト名.
+    ///
+    /// 頂点属性を格納した頂点バッファオブジェクト名を取り出す.
+    ///
+    /// @return この図形の頂点属性を格納した頂点バッファオブジェクト名.
+    ///
     const GLuint& getBuffer() const
     {
       return vertex->getBuffer();
     }
 
-    /// @brief 既存のバッファオブジェクトに頂点属性を転送する.
-    ///   @param vert 転送元の頂点属性が格納されてている領域の先頭のポインタ.
-    ///   @param first 転送先のバッファオブジェクトの先頭の要素番号.
-    ///   @param count 転送する頂点の位置データの数 (0 ならバッファオブジェクト全体).
+    ///
+    /// 既存のバッファオブジェクトに頂点属性を転送する.
+    ///
+    /// @param vert 転送元の頂点属性が格納されている領域の先頭のポインタ.
+    /// @param first 転送先のバッファオブジェクトの先頭の要素番号.
+    /// @param count 転送する頂点の位置データの数 (0 ならバッファオブジェクト全体).
+    ///
     void send(const GgVertex* vert, GLint first = 0, GLsizei count = 0) const
     {
       vertex->send(vert, first, count);
     }
 
-    /// @brief バッファオブジェクトを確保して頂点属性を格納する.
-    ///   @param vert 頂点属性が格納されてている領域の先頭のポインタ.
-    ///   @param count 頂点のデータの数 (頂点数).
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// バッファオブジェクトを確保して頂点属性を格納する.
+    ///
+    /// @param vert 頂点属性が格納されている領域の先頭のポインタ.
+    /// @param count 頂点のデータの数 (頂点数).
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     void load(const GgVertex* vert, GLsizei count, GLenum usage = GL_STATIC_DRAW);
 
-    /// @brief 三角形の描画.
-    ///   @param first 描画を開始する最初の三角形番号.
-    ///   @param count 描画する三角形数, 0 なら全部の三角形を描く.
+    ///
+    /// 三角形の描画.
+    ///
+    /// @param first 描画を開始する最初の三角形番号.
+    /// @param count 描画する三角形数, 0 なら全部の三角形を描く.
+    ///
     virtual void draw(GLint first = 0, GLsizei count = 0) const;
   };
 
-  /// @brief 三角形で表した形状データ (Elements 形式).
+  ///
+  /// 三角形で表した形状データ (Elements 形式).
   ///
   class GgElements
     : public GgTriangles
   {
     // インデックスを格納する頂点バッファオブジェクト
-    std::unique_ptr<GgBuffer<GLuint>> index;
+    std::shared_ptr<GgBuffer<GLuint>> index;
 
   public:
 
-    /// @brief コンストラクタ.
-    ///   @param mode 描画する基本図形の種類.
-    GgElements(GLenum mode = GL_TRIANGLES)
-      : GgTriangles(mode)
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param mode 描画する基本図形の種類.
+    ///
+    GgElements(GLenum mode = GL_TRIANGLES) :
+      GgTriangles(mode)
     {
     }
 
-    /// @brief コンストラクタ.
-    ///   @param vert この図形の頂点属性の配列 (nullptr ならデータを転送しない).
-    ///   @param countv 頂点数.
-    ///   @param face 三角形の頂点インデックス.
-    ///   @param countf 三角形の頂点数.
-    ///   @param mode 描画する基本図形の種類.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param vert この図形の頂点属性の配列 (nullptr ならデータを転送しない).
+    /// @param countv 頂点数.
+    /// @param face 三角形の頂点インデックス.
+    /// @param countf 三角形の頂点数.
+    /// @param mode 描画する基本図形の種類.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     GgElements(
       const GgVertex* vert,
       GLsizei countv,
@@ -5861,38 +6571,48 @@ namespace gg
       GLsizei countf,
       GLenum mode = GL_TRIANGLES,
       GLenum usage = GL_STATIC_DRAW
-    )
-      : GgElements(mode)
+    ) :
+      GgElements(mode)
     {
       load(vert, countv, face, countf, usage);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgElements()
     {
     }
 
-    /// @brief データの数を取り出す.
-    ///   @return この図形の三角形数.
+    ///
+    /// データの数を取り出す.
+    ///
+    /// @return この図形の三角形数.
     const GLsizei& getIndexCount() const
     {
       return index->getCount();
     }
 
-    /// @brief 三角形の頂点インデックスデータを格納した頂点バッファオブジェクト名を取り出す.
-    ///   @return この図形の三角形の頂点インデックスデータを格納した頂点バッファオブジェクト名.
+    ///
+    /// 三角形の頂点インデックスデータを格納した頂点バッファオブジェクト名を取り出す.
+    ///
+    /// @return この図形の三角形の頂点インデックスデータを格納した頂点バッファオブジェクト名.
+    ///
     const GLuint& getIndexBuffer() const
     {
       return index->getBuffer();
     }
 
-    /// @brief 既存のバッファオブジェクトに頂点属性と三角形の頂点インデックスデータを転送する.
-    ///   @param vert 頂点属性が格納されてている領域の先頭のポインタ.
-    ///   @param firstv 頂点属性の転送先のバッファオブジェクトの先頭の要素番号.
-    ///   @param countv 頂点のデータの数 (頂点数).
-    ///   @param face 三角形の頂点インデックスデータ.
-    ///   @param firstf インデックスの転送先のバッファオブジェクトの先頭の要素番号.
-    ///   @param countf 三角形の頂点数.
+    ///
+    /// 既存のバッファオブジェクトに頂点属性と三角形の頂点インデックスデータを転送する.
+    ///
+    /// @param vert 頂点属性が格納されている領域の先頭のポインタ.
+    /// @param firstv 頂点属性の転送先のバッファオブジェクトの先頭の要素番号.
+    /// @param countv 頂点のデータの数 (頂点数).
+    /// @param face 三角形の頂点インデックスデータ.
+    /// @param firstf インデックスの転送先のバッファオブジェクトの先頭の要素番号.
+    /// @param countf 三角形の頂点数.
+    ///
     void send(
       const GgVertex* vert,
       GLuint firstv,
@@ -5906,12 +6626,15 @@ namespace gg
       if (face != nullptr && countf > 0) index->send(face, firstf, countf);
     }
 
-    /// @brief バッファオブジェクトを確保して頂点属性と三角形の頂点インデックスデータを格納する.
-    ///   @param vert 頂点属性が格納されてている領域の先頭のポインタ.
-    ///   @param countv 頂点のデータの数 (頂点数).
-    ///   @param face 三角形の頂点インデックスデータ.
-    ///   @param countf 三角形の頂点数.
-    ///   @param usage バッファオブジェクトの使い方.
+    ///
+    /// バッファオブジェクトを確保して頂点属性と三角形の頂点インデックスデータを格納する.
+    ///
+    /// @param vert 頂点属性が格納されている領域の先頭のポインタ.
+    /// @param countv 頂点のデータの数 (頂点数).
+    /// @param face 三角形の頂点インデックスデータ.
+    /// @param countf 三角形の頂点数.
+    /// @param usage バッファオブジェクトの使い方.
+    ///
     void load(
       const GgVertex* vert,
       GLsizei countv,
@@ -5924,24 +6647,29 @@ namespace gg
       GgTriangles::load(vert, countv, usage);
 
       // インデックスの頂点バッファオブジェクトを作成する
-      index.reset(new GgBuffer<GLuint>(GL_ELEMENT_ARRAY_BUFFER, face, sizeof(GLuint), countf, usage));
+      index = std::make_shared<GgBuffer<GLuint>>(GL_ELEMENT_ARRAY_BUFFER, face, static_cast<GLsizei>(sizeof(GLuint)), countf, usage);
     }
 
-    /// @brief インデックスを使った三角形の描画.
-    ///   @param first 描画を開始する最初の三角形番号.
-    ///   @param count 描画する三角形数, 0 なら全部の三角形を描く.
+    ///
+    /// インデックスを使った三角形の描画.
+    ///
+    /// @param first 描画を開始する最初の三角形番号.
+    /// @param count 描画する三角形数, 0 なら全部の三角形を描く.
+    ///
     virtual void draw(GLint first = 0, GLsizei count = 0) const;
   };
 
-  /// @brief 点群を立方体状に生成する.
   ///
-  ///    @param countv 生成する点の数.
-  ///    @param length 点群を生成する立方体の一辺の長さ.
-  ///    @param cx 点群の中心の x 座標.
-  ///    @param cy 点群の中心の y 座標.
-  ///    @param cz 点群の中心の z 座標.
+  /// 点群を立方体状に生成する.
   ///
-  extern GgPoints* ggPointsCube(
+  /// @param countv 生成する点の数.
+  /// @param length 点群を生成する立方体の一辺の長さ.
+  /// @param cx 点群の中心の x 座標.
+  /// @param cy 点群の中心の y 座標.
+  /// @param cz 点群の中心の z 座標.
+  /// @return GgPoints 型の ポインタ.
+  ///
+  extern std::shared_ptr<GgPoints> ggPointsCube(
     GLsizei countv,
     GLfloat length = 1.0f,
     GLfloat cx = 0.0f,
@@ -5949,15 +6677,17 @@ namespace gg
     GLfloat cz = 0.0f
   );
 
-  /// @brief 点群を球状に生成する.
   ///
-  ///   @param countv 生成する点の数.
-  ///   @param radius 点群を生成する半径.
-  ///   @param cx 点群の中心の x 座標.
-  ///   @param cy 点群の中心の y 座標.
-  ///   @param cz 点群の中心の z 座標.
+  /// 点群を球状に生成する.
   ///
-  extern GgPoints* ggPointsSphere(
+  /// @param countv 生成する点の数.
+  /// @param radius 点群を生成する半径.
+  /// @param cx 点群の中心の x 座標.
+  /// @param cy 点群の中心の y 座標.
+  /// @param cz 点群の中心の z 座標.
+  /// @return GgPoints 型のポインタ.
+  ///
+  extern std::shared_ptr<GgPoints> ggPointsSphere(
     GLsizei countv,
     GLfloat radius = 0.5f,
     GLfloat cx = 0.0f,
@@ -5965,64 +6695,77 @@ namespace gg
     GLfloat cz = 0.0f
   );
 
-  /// @brief 矩形状に 2 枚の三角形を生成する.
   ///
-  ///   @param width 矩形の横幅.
-  ///   @param height 矩形の高さ.
+  /// 矩形状に 2 枚の三角形を生成する.
   ///
-  extern GgTriangles* ggRectangle(
+  /// @param width 矩形の横幅.
+  /// @param height 矩形の高さ.
+  /// @return GgTriangles 型のポインタ.
+  ///
+  extern std::shared_ptr<GgTriangles> ggRectangle(
     GLfloat width = 1.0f,
     GLfloat height = 1.0f
   );
 
-  /// @brief 楕円状に三角形を生成する.
   ///
-  ///   @param width 楕円の横幅.
-  ///   @param height 楕円の高さ.
-  ///   @param slices 楕円の分割数.
+  /// 楕円状に三角形を生成する.
   ///
-  extern GgTriangles* ggEllipse(
+  /// @param width 楕円の横幅.
+  /// @param height 楕円の高さ.
+  /// @param slices 楕円の分割数.
+  /// @return GgTriangles 型のポインタ.
+  ///
+  extern std::shared_ptr<GgTriangles> ggEllipse(
     GLfloat width = 1.0f,
     GLfloat height = 1.0f,
     GLuint slices = 16
   );
 
-  /// @brief Wavefront OBJ ファイルを読み込む (Arrays 形式)
   ///
-  ///   三角形分割された Wavefront OBJ ファイルを読み込んで
-  ///   GgArrays 形式の三角形データを生成する.
+  /// Wavefront OBJ ファイルを読み込む (Arrays 形式)
   ///
-  ///   @param name ファイル名.
-  ///   @param normalize true なら大きさを正規化.
+  /// @param name ファイル名.
+  /// @param normalize true なら大きさを正規化.
+  /// @return GgTriangles 型のポインタ.
   ///
-  extern GgTriangles* ggArraysObj(
+  /// @note
+  /// 三角形分割された Wavefront OBJ ファイルを読み込んで
+  /// GgArrays 形式の三角形データを生成する.
+  ///
+  extern std::shared_ptr<GgTriangles> ggArraysObj(
     const std::string& name,
     bool normalize = false
   );
 
-  /// @brief Wavefront OBJ ファイル を読み込む (Elements 形式).
   ///
-  ///   三角形分割された Wavefront OBJ ファイル を読み込んで
-  ///   GgElements 形式の三角形データを生成する.
+  /// Wavefront OBJ ファイル を読み込む (Elements 形式).
   ///
-  ///   @param name ファイル名.
-  ///   @param normalize true なら大きさを正規化.
+  /// @param name ファイル名.
+  /// @param normalize true なら大きさを正規化.
+  /// @return GgElements 型のポインタ.
   ///
-  extern GgElements* ggElementsObj(
+  /// @note
+  /// 三角形分割された Wavefront OBJ ファイル を読み込んで
+  /// GgElements 形式の三角形データを生成する.
+  ///
+  extern std::shared_ptr<GgElements> ggElementsObj(
     const std::string& name,
     bool normalize = false
   );
 
-  /// @brief メッシュ形状を作成する (Elements 形式).
   ///
-  ///   メッシュ状に GgElements 形式の三角形データを生成する.
+  /// メッシュ形状を作成する (Elements 形式).
   ///
-  ///   @param slices メッシュの横方向の分割数.
-  ///   @param stacks メッシュの縦方向の分割数.
-  ///   @param pos メッシュの頂点の位置.
-  ///   @param norm メッシュの頂点の法線, nullptr なら頂点の位置から算出する.
+  /// @param slices メッシュの横方向の分割数.
+  /// @param stacks メッシュの縦方向の分割数.
+  /// @param pos メッシュの頂点の位置.
+  /// @param norm メッシュの頂点の法線, nullptr なら頂点の位置から算出する.
+  /// @return GgElements 型のポインタ.
   ///
-  extern GgElements* ggElementsMesh(
+  /// @note
+  /// メッシュ状に GgElements 形式の三角形データを生成する.
+  ///
+  extern std::shared_ptr<GgElements> ggElementsMesh(
     GLuint slices,
     GLuint stacks,
     const GLfloat(*pos)[3],
@@ -6031,21 +6774,25 @@ namespace gg
 
   /// 球状に三角形データを生成する (Elements 形式).
   ///
-  ///   球状に GgElements 形式の三角形データを生成する.
+  /// @param radius 球の半径.
+  /// @param slices 球の経度方向の分割数.
+  /// @param stacks 球の緯度方向の分割数.
+  /// @return GgElements 型のポインタ.
   ///
-  ///   @param radius 球の半径.
-  ///   @param slices 球の経度方向の分割数.
-  ///   @param stacks 球の緯度方向の分割数.
+  /// @note
+  /// 球状に GgElements 形式の三角形データを生成する.
   ///
-  extern GgElements* ggElementsSphere(
+  extern std::shared_ptr<GgElements> ggElementsSphere(
     GLfloat radius = 1.0f,
     int slices = 16,
     int stacks = 8
   );
 
-  /// @brief シェーダの基底クラス.
   ///
-  ///   シェーダのクラスはこのクラスを派生して作る.
+  /// シェーダの基底クラス.
+  ///
+  /// @note
+  /// シェーダのクラスはこのクラスを派生して作る.
   ///
   class GgShader
   {
@@ -6054,26 +6801,49 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param vert バーテックスシェーダのソースファイル名.
-    ///   @param frag フラグメントシェーダのソースファイル名 (0 なら不使用).
-    ///   @param geom ジオメトリシェーダのソースファイル名 (0 なら不使用).
-    ///   @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
-    ///   @param varyings フィードバックする varying 変数のリスト.
-    /// 
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param vert バーテックスシェーダのソースファイル名.
+    /// @param frag フラグメントシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param geom ジオメトリシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト.
+    ///
     GgShader(
       const std::string& vert,
       const std::string& frag = "",
       const std::string& geom = "",
       int nvarying = 0,
       const char* const* varyings = nullptr
-    )
-      : program(ggLoadShader(vert, frag, geom, nvarying, varyings))
+    ) :
+      program(ggLoadShader(vert, frag, geom, nvarying, varyings))
     {
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param files バーテックスシェーダのソースファイル名の配列.
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+    ///
+    GgShader(
+      const std::array<std::string, 3>& files,
+      int nvarying = 0,
+      const char* const* varyings = nullptr
+    ) :
+      GgShader(files[0], files[1], files[2], nvarying, varyings)
+    {
+    }
+
+    ///
+    /// コピーコンストラクタは使用禁止.
+    ///
+    GgShader(const GgShader& o) = delete;
+
+    ///
+    /// デストラクタ.
     ///
     virtual ~GgShader()
     {
@@ -6082,31 +6852,31 @@ namespace gg
       glDeleteProgram(program);
     }
 
-    /// @brief コピーコンストラクタは使用禁止.
     ///
-    GgShader(const GgShader& o) = delete;
-
-    /// @brief 代入演算子は使用禁止.
+    /// 代入演算子は使用禁止.
     ///
     GgShader& operator=(const GgShader& o) = delete;
 
-    /// @brief シェーダプログラムの使用を開始する.
+    ///
+    /// シェーダプログラムの使用を開始する.
     ///
     void use() const
     {
       glUseProgram(program);
     }
 
-    /// @brief シェーダプログラムの使用を終了する.
+    ///
+    /// シェーダプログラムの使用を終了する.
     ///
     void unuse() const
     {
       glUseProgram(0);
     }
 
-    /// @brief シェーダのプログラム名を得る.
-    /// 
-    ///   @return シェーダのプログラム名.
+    ///
+    /// シェーダのプログラム名を得る.
+    ///
+    /// @return シェーダのプログラム名.
     ///
     GLuint get() const
     {
@@ -6114,7 +6884,8 @@ namespace gg
     }
   };
 
-  /// @brief 点のシェーダ.
+  ///
+  /// 点のシェーダ.
   ///
   class GgPointShader
   {
@@ -6129,48 +6900,69 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
     ///
-    GgPointShader()
-      : mpLoc{ -1 }
-      , mvLoc{ -1 }
+    /// コンストラクタ.
+    ///
+    GgPointShader() :
+      mpLoc{ -1 },
+      mvLoc{ -1 }
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param vert バーテックスシェーダのソースファイル名.
-    ///   @param frag フラグメントシェーダのソースファイル名 (0 なら不使用).
-    ///   @param geom ジオメトリシェーダのソースファイル名 (0 なら不使用).
-    ///   @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
-    ///   @param varyings フィードバックする varying 変数のリスト.
-    /// 
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param vert バーテックスシェーダのソースファイル名.
+    /// @param frag フラグメントシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param geom ジオメトリシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト.
+    ///
     GgPointShader(
       const std::string& vert,
       const std::string& frag = "",
       const std::string& geom = "",
       GLint nvarying = 0,
       const char* const* varyings = nullptr
-    )
-      : GgPointShader()
+    ) :
+      GgPointShader()
     {
       load(vert, frag, geom, nvarying, varyings);
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param files バーテックスシェーダのソースファイル名の配列.
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+    ///
+    GgPointShader(
+      const std::array<std::string, 3>& files,
+      int nvarying = 0,
+      const char* const* varyings = nullptr
+    ) :
+      GgPointShader(files[0], files[1], files[2], nvarying, varyings)
+    {
+    }
+
+    ///
+    /// デストラクタ.
+    ///
     virtual ~GgPointShader()
     {
     }
 
-    /// @brief シェーダのソースファイルを読み込む.
-    /// 
-    ///   @param vert バーテックスシェーダのソースファイル名.
-    ///   @param frag フラグメントシェーダのソースファイル名 (0 なら不使用).
-    ///   @param geom ジオメトリシェーダのソースファイル名 (0 なら不使用).
-    ///   @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
-    ///   @param varyings フィードバックする varying 変数のリスト.
-    /// 
-    ///   @return プログラムオブジェクトが作成できれば true.
+    ///
+    /// シェーダのソースファイルを読み込む.
+    ///
+    /// @param vert バーテックスシェーダのソースファイル名.
+    /// @param frag フラグメントシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param geom ジオメトリシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト.
+    ///
+    /// @return プログラムオブジェクトが作成できれば true.
     bool load(
       const std::string& vert,
       const std::string& frag = "",
@@ -6180,7 +6972,7 @@ namespace gg
     )
     {
       // シェーダを作成する
-      shader.reset(new GgShader(vert, frag, geom, nvarying, varyings));
+      shader = std::make_shared<GgShader>(vert, frag, geom, nvarying, varyings);
 
       // プログラム名を取り出す
       const GLuint program(shader->get());
@@ -6196,128 +6988,159 @@ namespace gg
       return true;
     }
 
-    /// @brief 投影変換行列を設定する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    /// 
+    ///
+    /// シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
+    ///
+    /// @param files バーテックスシェーダのソースファイル名の配列.
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+    /// @return プログラムオブジェクトの作成に成功したら true.
+    ///
+    bool load(
+      const std::array<std::string, 3>& files,
+      GLint nvarying = 0,
+      const char* const* varyings = nullptr
+    )
+    {
+      return load(files[0], files[1], files[2], nvarying, varyings);
+    }
+
+    ///
+    /// 投影変換行列を設定する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    ///
     virtual void loadProjectionMatrix(const GLfloat* mp) const
     {
       glUniformMatrix4fv(mpLoc, 1, GL_FALSE, mp);
     }
 
-    /// @brief 投影変換行列を設定する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    /// 
+    ///
+    /// 投影変換行列を設定する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    ///
     virtual void loadProjectionMatrix(const GgMatrix& mp) const
     {
       loadProjectionMatrix(mp.get());
     }
 
-    /// @brief モデルビュー変換行列を設定する.
-    /// 
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    /// 
+    ///
+    /// モデルビュー変換行列を設定する.
+    ///
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    ///
     virtual void loadModelviewMatrix(const GLfloat* mv) const
     {
       glUniformMatrix4fv(mvLoc, 1, GL_FALSE, mv);
     }
 
-    /// @brief モデルビュー変換行列を設定する.
-    /// 
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    /// 
+    ///
+    /// モデルビュー変換行列を設定する.
+    ///
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    ///
     virtual void loadModelviewMatrix(const GgMatrix& mv) const
     {
       loadModelviewMatrix(mv.get());
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列を設定する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列を設定する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    ///
     virtual void loadMatrix(const GLfloat* mp, const GLfloat* mv) const
     {
       loadProjectionMatrix(mp);
       loadModelviewMatrix(mv);
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列を設定する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列を設定する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    ///
     virtual void loadMatrix(const GgMatrix& mp, const GgMatrix& mv) const
     {
       loadMatrix(mp.get(), mv.get());
     }
 
-    /// @brief シェーダプログラムの使用を開始する.
+    ///
+    /// シェーダプログラムの使用を開始する.
     ///
     virtual void use() const
     {
       shader->use();
     }
 
-    /// @brief 投影変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    /// 
+    ///
+    /// 投影変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    ///
     void use(const GLfloat* mp) const
     {
       use();
       loadProjectionMatrix(mp);
     }
 
-    /// @brief 投影変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    /// 
+    ///
+    /// 投影変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    ///
     void use(const GgMatrix& mp) const
     {
       use(mp.get());
     }
 
-    /// @brief 投影変換行列とモデルビューを設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビューを設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    ///
     void use(const GLfloat* mp, const GLfloat* mv) const
     {
       use(mp);
       loadModelviewMatrix(mv);
     }
 
-    /// @brief 投影変換行列とモデルビューを設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビューを設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    ///
     void use(const GgMatrix& mp, const GgMatrix& mv) const
     {
       use(mp.get(), mv.get());
     }
 
-    /// @brief シェーダプログラムの使用を終了する.
+    ///
+    /// シェーダプログラムの使用を終了する.
     ///
     void unuse() const
     {
       shader->unuse();
     }
 
-    /// @brief シェーダのプログラム名を得る.
-    /// 
-    ///   @return シェーダのプログラム名.
-    /// 
+    ///
+    /// シェーダのプログラム名を得る.
+    ///
+    /// @return シェーダのプログラム名.
+    ///
     GLuint get() const
     {
       return shader->get();
     }
   };
 
-  /// @brief 三角形に単純な陰影付けを行うシェーダ.
+  ///
+  /// 三角形に単純な陰影付けを行うシェーダ.
   ///
   class GgSimpleShader
     : public GgPointShader
@@ -6333,23 +7156,26 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
-    GgSimpleShader()
-      : GgPointShader()
-      , materialIndex{ -1 }
-      , lightIndex{ -1 }
-      , mnLoc{ -1 }
+    ///
+    /// コンストラクタ.
+    ///
+    GgSimpleShader() :
+      GgPointShader(),
+      materialIndex{ -1 },
+      lightIndex{ -1 },
+      mnLoc{ -1 }
     {
     }
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param vert バーテックスシェーダのソースファイル名.
-    ///   @param frag フラグメントシェーダのソースファイル名 (0 なら不使用).
-    ///   @param geom ジオメトリシェーダのソースファイル名 (0 なら不使用).
-    ///   @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
-    ///   @param varyings フィードバックする varying 変数のリスト.
-    /// 
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param vert バーテックスシェーダのソースファイル名.
+    /// @param frag フラグメントシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param geom ジオメトリシェーダのソースファイル名 (空文字列なら不使用).
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト.
+    ///
     GgSimpleShader(
       const std::string& vert,
       const std::string& frag = "",
@@ -6361,23 +7187,42 @@ namespace gg
       load(vert, frag, geom, nvarying, varyings);
     }
 
-    /// @brief コピーコンストラクタ.
     ///
-    GgSimpleShader(const GgSimpleShader& o)
-      : GgPointShader(o)
-      , materialIndex{ o.materialIndex }
-      , lightIndex{ o.lightIndex }
-      , mnLoc{ o.mnLoc }
+    /// コンストラクタ.
+    ///
+    /// @param files バーテックスシェーダのソースファイル名の配列.
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+    ///
+    GgSimpleShader(
+      const std::array<std::string, 3>& files,
+      GLint nvarying = 0,
+      const char* const* varyings = nullptr
+    ) :
+      GgSimpleShader(files[0], files[1], files[2], nvarying, varyings)
     {
     }
 
-    /// @brief デストラクタ.
+    ///
+    /// コピーコンストラクタ.
+    ///
+    GgSimpleShader(const GgSimpleShader& o) :
+      GgPointShader(o),
+      materialIndex{ o.materialIndex },
+      lightIndex{ o.lightIndex },
+      mnLoc{ o.mnLoc }
+    {
+    }
+
+    ///
+    /// デストラクタ.
     ///
     virtual ~GgSimpleShader()
     {
     }
 
-    /// @brief 代入演算子.
+    ///
+    /// 代入演算子.
     ///
     GgSimpleShader& operator=(const GgSimpleShader& o)
     {
@@ -6392,15 +7237,16 @@ namespace gg
       return *this;
     }
 
-    /// @brief シェーダのソースプログラムの文字列からプログラムオブジェクトを作成する.
-    /// 
-    ///   @param vert バーテックスシェーダのソースプログラムの文字列.
-    ///   @param frag フラグメントシェーダのソースプログラムの文字列.
-    ///   @param geom ジオメトリシェーダのソースプログラムの文字列.
-    ///   @param nvarying Transform Feedback に使う varying 変数の数.
-    ///   @param varyings Transform Feedback に使う varying 変数の変数名の文字列の配列.
-    ///   @return プログラムオブジェクトの作成に成功したら true.
-    /// 
+    ///
+    /// シェーダのソースプログラムの文字列からプログラムオブジェクトを作成する.
+    ///
+    /// @param vert バーテックスシェーダのソースプログラムの文字列.
+    /// @param frag フラグメントシェーダのソースプログラムの文字列（空文字列なら不使用）.
+    /// @param geom ジオメトリシェーダのソースプログラムの文字列（空文字列なら不使用）.
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+    /// @return プログラムオブジェクトの作成に成功したら true.
+    ///
     bool load(
       const std::string& vert,
       const std::string& frag = "",
@@ -6409,89 +7255,115 @@ namespace gg
       const char* const* varyings = nullptr
     );
 
-    /// @brief モデルビュー変換行列と法線変換行列を設定する.
-    /// 
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    ///   @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
-    /// 
+    ///
+    /// シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
+    ///
+    /// @param files バーテックスシェーダのソースファイル名の配列.
+    /// @param nvarying フィードバックする varying 変数の数 (0 なら不使用).
+    /// @param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
+    /// @return プログラムオブジェクトの作成に成功したら true.
+    ///
+    bool load(
+      const std::array<std::string, 3>& files,
+      GLint nvarying = 0,
+      const char* const* varyings = nullptr
+    )
+    {
+      return load(files[0], files[1], files[2], nvarying, varyings);
+    }
+
+    ///
+    /// モデルビュー変換行列と法線変換行列を設定する.
+    ///
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    /// @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
+    ///
     virtual void loadModelviewMatrix(const GLfloat* mv, const GLfloat* mn) const
     {
       GgPointShader::loadModelviewMatrix(mv);
       glUniformMatrix4fv(mnLoc, 1, GL_FALSE, mn);
     }
 
-    /// @brief モデルビュー変換行列と法線変換行列を設定する.
-    /// 
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    ///   @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
-    /// 
+    ///
+    /// モデルビュー変換行列と法線変換行列を設定する.
+    ///
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    /// @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
+    ///
     virtual void loadModelviewMatrix(const GgMatrix& mv, const GgMatrix& mn) const
     {
       loadModelviewMatrix(mv.get(), mn.get());
     }
 
-    /// @brief モデルビュー変換行列とそれから求めた法線変換行列を設定する.
-    /// 
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    /// 
+    ///
+    /// モデルビュー変換行列とそれから求めた法線変換行列を設定する.
+    ///
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    ///
     virtual void loadModelviewMatrix(const GLfloat* mv) const
     {
       loadModelviewMatrix(mv, GgMatrix(mv).normal().get());
     }
 
-    /// @brief モデルビュー変換行列とそれから求めた法線変換行列を設定する.
-    /// 
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    /// 
+    ///
+    /// モデルビュー変換行列とそれから求めた法線変換行列を設定する.
+    ///
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    ///
     virtual void loadModelviewMatrix(const GgMatrix& mv) const
     {
       loadModelviewMatrix(mv.get());
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列と法線変換行列を設定する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    ///   @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列と法線変換行列を設定する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    /// @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
+    ///
     virtual void loadMatrix(const GLfloat* mp, const GLfloat* mv, const GLfloat* mn) const
     {
       GgPointShader::loadMatrix(mp, mv);
       glUniformMatrix4fv(mnLoc, 1, GL_FALSE, mn);
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列と法線変換行列を設定する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    ///   @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列と法線変換行列を設定する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    /// @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
+    ///
     virtual void loadMatrix(const GgMatrix& mp, const GgMatrix& mv, const GgMatrix& mn) const
     {
       loadMatrix(mp.get(), mv.get(), mn.get());
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    ///
     virtual void loadMatrix(const GLfloat* mp, const GLfloat* mv) const
     {
       loadMatrix(mp, mv, GgMatrix(mv).normal());
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    ///
     virtual void loadMatrix(const GgMatrix& mp, const GgMatrix& mv) const
     {
       loadMatrix(mp, mv, mv.normal());
     }
 
-    /// @brief 三角形に単純な陰影付けを行うシェーダが参照する光源データ.
+    ///
+    /// 三角形に単純な陰影付けを行うシェーダが参照する光源データ.
     ///
     struct Light
     {
@@ -6501,230 +7373,251 @@ namespace gg
       GgVector position;  ///< 光源の位置.
     };
 
-    /// @brief 三角形に単純な陰影付けを行うシェーダが参照する光源データのユニフォームバッファオブジェクト.
+    ///
+    /// 三角形に単純な陰影付けを行うシェーダが参照する光源データのユニフォームバッファオブジェクト.
     ///
     class LightBuffer
       : public GgUniformBuffer<Light>
     {
     public:
 
-      /// @brief デフォルトコンストラクタ.
-      /// 
-      ///   @param light GgSimpleShader::Light 型の光源データのポインタ.
-      ///   @param count バッファ中の GgSimpleShader::Light 型の光源データの数.
-      ///   @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
-      /// 
+      ///
+      /// デフォルトコンストラクタ.
+      ///
+      /// @param light GgSimpleShader::Light 型の光源データのポインタ.
+      /// @param count バッファ中の GgSimpleShader::Light 型の光源データの数.
+      /// @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
+      ///
       LightBuffer(
         const Light* light = nullptr,
         GLsizei count = 1,
         GLenum usage = GL_STATIC_DRAW
-      )
-        : GgUniformBuffer<Light>(light, count, usage)
+      ) :
+        GgUniformBuffer<Light>(light, count, usage)
       {
       }
 
-      /// @brief 同じデータで埋めるコンストラクタ.
-      /// 
-      ///   @param light GgSimpleShader::Light 型の光源データ.
-      ///   @param count バッファ中の GgSimpleShader::Light 型の光源データの数.
-      ///   @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
-      /// 
+      ///
+      /// 同じデータで埋めるコンストラクタ.
+      ///
+      /// @param light GgSimpleShader::Light 型の光源データ.
+      /// @param count バッファ中の GgSimpleShader::Light 型の光源データの数.
+      /// @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
+      ///
       LightBuffer(
         const Light& light,
         GLsizei count = 1,
         GLenum usage = GL_STATIC_DRAW
-      )
-        : GgUniformBuffer<Light>(light, count, usage)
+      ) :
+        GgUniformBuffer<Light>(light, count, usage)
       {
       }
 
-      /// @brief デストラクタ.
+      ///
+      /// デストラクタ.
       ///
       virtual ~LightBuffer()
-    {
-    }
+      {
+      }
 
-      /// @brief 光源の強度の環境光成分を設定する.
-      /// 
-      ///   @param r 光源の強度の環境光成分の赤成分.
-      ///   @param g 光源の強度の環境光成分の緑成分.
-      ///   @param b 光源の強度の環境光成分の青成分.
-      ///   @param a 光源の強度の拡散反射光成分の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の環境光成分を設定する.
+      ///
+      /// @param r 光源の強度の環境光成分の赤成分.
+      /// @param g 光源の強度の環境光成分の緑成分.
+      /// @param b 光源の強度の環境光成分の青成分.
+      /// @param a 光源の強度の拡散反射光成分の不透明度, デフォルトは 1.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadAmbient(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 光源の強度の環境光成分を設定する.
-      /// 
-      ///   @param ambient 光源の強度の環境光成分を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の環境光成分を設定する.
+      ///
+      /// @param ambient 光源の強度の環境光成分を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
+      void loadAmbient(const GgVector& ambient, GLint first = 0, GLsizei count = 1) const;
+
+      ///
+      /// 光源の強度の環境光成分を設定する.
+      ///
+      /// @param ambient 光源の強度の環境光成分を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadAmbient(const GLfloat* ambient, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個の ambient 要素に値を設定する
         send(ambient, offsetof(Light, ambient), sizeof(Light::ambient), first, count);
       }
 
-      /// @brief 光源の強度の環境光成分を設定する.
-      /// 
-      ///   @param ambient 光源の強度の環境光成分を格納した GgVector 型の変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
-      void loadAmbient(const GgVector& ambient, GLint first = 0, GLsizei count = 1) const;
-
-      /// @brief 光源の強度の拡散反射光成分を設定する.
-      /// 
-      ///   @param r 光源の強度の拡散反射光成分の赤成分.
-      ///   @param g 光源の強度の拡散反射光成分の緑成分.
-      ///   @param b 光源の強度の拡散反射光成分の青成分.
-      ///   @param a 光源の強度の拡散反射光成分の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の拡散反射光成分を設定する.
+      ///
+      /// @param r 光源の強度の拡散反射光成分の赤成分.
+      /// @param g 光源の強度の拡散反射光成分の緑成分.
+      /// @param b 光源の強度の拡散反射光成分の青成分.
+      /// @param a 光源の強度の拡散反射光成分の不透明度, デフォルトは 1.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadDiffuse(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 光源の強度の拡散反射光成分を設定する.
-      /// 
-      ///   @param specular 光源の強度の拡散反射光成分を格納した GgVector 型の変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の拡散反射光成分を設定する.
+      ///
+      /// @param diffuse 光源の強度の拡散反射光成分を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadDiffuse(const GgVector& diffuse, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 光源の強度の拡散反射光成分を設定する.
-      /// 
-      ///   @param diffuse 光源の強度の拡散反射光成分を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の拡散反射光成分を設定する.
+      ///
+      /// @param diffuse 光源の強度の拡散反射光成分を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadDiffuse(const GLfloat* diffuse, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個の diffuse 要素に値を設定する
         send(diffuse, offsetof(Light, diffuse), sizeof(Light::diffuse), first, count);
       }
 
-      /// @brief 光源の強度の鏡面反射光成分を設定する.
-      /// 
-      ///   @param r 光源の強度の鏡面反射光成分の赤成分.
-      ///   @param g 光源の強度の鏡面反射光成分の緑成分.
-      ///   @param b 光源の強度の鏡面反射光成分の青成分.
-      ///   @param a 光源の強度の鏡面反射光成分の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の鏡面反射光成分を設定する.
+      ///
+      /// @param r 光源の強度の鏡面反射光成分の赤成分.
+      /// @param g 光源の強度の鏡面反射光成分の緑成分.
+      /// @param b 光源の強度の鏡面反射光成分の青成分.
+      /// @param a 光源の強度の鏡面反射光成分の不透明度, デフォルトは 1.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadSpecular(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 光源の強度の鏡面反射光成分を設定する.
-      /// 
-      ///   @param specular 光源の強度の鏡面反射光成分を格納した GgVector 型の変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の鏡面反射光成分を設定する.
+      ///
+      /// @param specular 光源の強度の鏡面反射光成分を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadSpecular(const GgVector& specular, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 光源の強度の鏡面反射光成分を設定する.
-      /// 
-      ///   @param specular 光源の強度の鏡面反射光成分を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の強度の鏡面反射光成分を設定する.
+      ///
+      /// @param specular 光源の強度の鏡面反射光成分を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadSpecular(const GLfloat* specular, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個の specular 要素に値を設定する
         send(specular, offsetof(Light, specular), sizeof(Light::specular), first, count);
       }
 
-      /// @brief 光源の色を設定するが位置は変更しない.
-      /// 
-      ///   @param color 光源の特性の GgSimpleShader::Light 構造体.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の色を設定するが位置は変更しない.
+      ///
+      /// @param color 光源の特性の GgSimpleShader::Light 構造体.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadColor(const Light& color, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 光源の位置を設定する.
-      /// 
-      ///   @param x 光源の位置の x 座標.
-      ///   @param y 光源の位置の y 座標.
-      ///   @param z 光源の位置の z 座標.
-      ///   @param w 光源の位置の w 座標, デフォルトは 1.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の位置を設定する.
+      ///
+      /// @param x 光源の位置の x 座標.
+      /// @param y 光源の位置の y 座標.
+      /// @param z 光源の位置の z 座標.
+      /// @param w 光源の位置の w 座標, デフォルトは 1.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadPosition(
         GLfloat x, GLfloat y, GLfloat z, GLfloat w = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 光源の位置を設定する.
-      /// 
-      ///   @param position 光源の位置の同次座標を格納した GgVector 型の変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の位置を設定する.
+      ///
+      /// @param position 光源の位置の同次座標を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadPosition(const GgVector& position, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 光源の位置を設定する.
-      /// 
-      ///   @param position 光源の位置の同次座標を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の位置を設定する.
+      ///
+      /// @param position 光源の位置の同次座標を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadPosition(const GLfloat* position, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個の position 要素に値を設定する
         send(position, offsetof(Light, position), sizeof(Light::position), first, count);
       }
 
-      /// @brief 光源の位置を設定する.
-      /// 
-      ///   @param position 光源の位置の同次座標を格納した GgVector 型の配列.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の位置を設定する.
+      ///
+      /// @param position 光源の位置の同次座標を格納した GgVector 型の配列.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void loadPosition(const GgVector* position, GLint first = 0, GLsizei count = 1) const
       {
         loadPosition(position->data(), first, count);
       }
 
-      /// @brief 光源の色と位置を設定する.
-      /// 
-      ///   @param light 光源の特性の GgSimpleShader::Light 構造体のポインタ.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の色と位置を設定する.
+      ///
+      /// @param light 光源の特性の GgSimpleShader::Light 構造体のポインタ.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void load(const Light* light, GLint first = 0, GLsizei count = 1) const
       {
         send(light, 0, sizeof(Light), first, count);
       }
 
-      /// @brief 光源の色と位置を設定する.
-      /// 
-      ///   @param light 光源の特性の GgSimpleShader::Light 構造体.
-      ///   @param first 値を設定する光源データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する光源データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 光源の色と位置を設定する.
+      ///
+      /// @param light 光源の特性の GgSimpleShader::Light 構造体.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
       void load(const Light& light, GLint first = 0, GLsizei count = 1) const
       {
         load(&light, first, count);
       }
 
-      /// @brief 光源を選択する.
-      /// 
-      ///   @param i 光源データの uniform block のインデックス.
-      /// 
+      ///
+      /// 光源を選択する.
+      ///
+      /// @param i 光源データの uniform block のインデックス.
+      ///
       void select(GLint i = 0) const
       {
         // バッファオブジェクトの i 番目のブロックの位置
@@ -6733,7 +7626,8 @@ namespace gg
       }
     };
 
-    /// @brief 三角形に単純な陰影付けを行うシェーダが参照する材質データ.
+    ///
+    /// 三角形に単純な陰影付けを行うシェーダが参照する材質データ.
     ///
     struct Material
     {
@@ -6743,191 +7637,244 @@ namespace gg
       GLfloat shininess;  ///< 輝き係数.
     };
 
-    /// @brief 三角形に単純な陰影付けを行うシェーダが参照する材質データのユニフォームバッファオブジェクト.
+    ///
+    /// 三角形に単純な陰影付けを行うシェーダが参照する材質データのユニフォームバッファオブジェクト.
     ///
     class MaterialBuffer
       : public GgUniformBuffer<Material>
     {
     public:
 
-      /// @brief デフォルトコンストラクタ.
-      /// 
-      ///   @param material GgSimpleShader::Material 型の材質データのポインタ.
-      ///   @param count バッファ中の GgSimpleShader::Material 型の材質データの数.
-      ///   @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
-      /// 
+      ///
+      /// デフォルトコンストラクタ.
+      ///
+      /// @param material GgSimpleShader::Material 型の材質データのポインタ.
+      /// @param count バッファ中の GgSimpleShader::Material 型の材質データの数.
+      /// @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
+      ///
       MaterialBuffer(
         const Material* material = nullptr,
         GLsizei count = 1,
         GLenum usage = GL_STATIC_DRAW
-      )
-        : GgUniformBuffer<Material>(material, count, usage)
+      ) :
+        GgUniformBuffer<Material>(material, count, usage)
       {
       }
 
-      /// @brief 同じデータで埋めるコンストラクタ.
-      /// 
-      ///   @param material GgSimpleShader::Material 型の材質データ.
-      ///   @param count バッファ中の GgSimpleShader::Material 型の材質データの数.
-      ///   @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
-      /// 
+      ///
+      /// 同じデータで埋めるコンストラクタ.
+      ///
+      /// @param material GgSimpleShader::Material 型の材質データ.
+      /// @param count バッファ中の GgSimpleShader::Material 型の材質データの数.
+      /// @param usage バッファの使い方のパターン, glBufferData() の第 4 引数の usage に渡される.
+      ///
       MaterialBuffer(
         const Material& material,
         GLsizei count = 1,
         GLenum usage = GL_STATIC_DRAW
-      )
-        : GgUniformBuffer<Material>(material, count, usage)
+      ) :
+        GgUniformBuffer<Material>(material, count, usage)
       {
       }
 
-      /// @brief デストラクタ.
+      ///
+      /// デストラクタ.
       ///
       virtual ~MaterialBuffer()
       {
       }
 
-      /// @brief 環境光に対する反射係数を設定する.
-      /// 
-      ///   @param r 環境光に対する反射係数の赤成分.
-      ///   @param g 環境光に対する反射係数の緑成分.
-      ///   @param b 環境光に対する反射係数の青成分.
-      ///   @param a 環境光に対する反射係数の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 環境光に対する反射係数を設定する.
+      ///
+      /// @param r 環境光に対する反射係数の赤成分.
+      /// @param g 環境光に対する反射係数の緑成分.
+      /// @param b 環境光に対する反射係数の青成分.
+      /// @param a 環境光に対する反射係数の不透明度, デフォルトは 1.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadAmbient(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 環境光に対する反射係数を設定する.
-      /// 
-      ///   @param ambient 環境光に対する反射係数を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 三角形に単純な陰影付けを行うシェーダが参照する光源データ：光源の強度の環境光成分を設定する.
+      ///
+      /// @param ambient 光源の強度の環境光成分を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
+      void loadAmbient(const GgVector& ambient, GLint first = 0, GLsizei count = 1) const;
+
+      ///
+      /// 環境光に対する反射係数を設定する.
+      ///
+      /// @param ambient 環境光に対する反射係数を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadAmbient(const GLfloat* ambient, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個のブロックの ambient 要素に値を設定する
         send(ambient, offsetof(Material, ambient), sizeof(Material::ambient), first, count);
       }
 
-      /// @brief 拡散反射係数を設定する.
-      /// 
-      ///   @param r 拡散反射係数の赤成分.
-      ///   @param g 拡散反射係数の緑成分.
-      ///   @param b 拡散反射係数の青成分.
-      ///   @param a 拡散反射係数の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 拡散反射係数を設定する.
+      ///
+      /// @param r 拡散反射係数の赤成分.
+      /// @param g 拡散反射係数の緑成分.
+      /// @param b 拡散反射係数の青成分.
+      /// @param a 拡散反射係数の不透明度, デフォルトは 1.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadDiffuse(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 拡散反射係数を設定する.
-      /// 
-      ///   @param diffuse 拡散反射係数を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 三角形に単純な陰影付けを行うシェーダが参照する光源データ：光源の強度の拡散反射光成分を設定する.
+      ///
+      /// @param ambient 光源の強度の拡散反射光成分を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
+      void loadDiffuse(const GgVector& diffuse, GLint first = 0, GLsizei count = 1) const;
+
+      ///
+      /// 拡散反射係数を設定する.
+      ///
+      /// @param diffuse 拡散反射係数を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadDiffuse(const GLfloat* diffuse, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個の diffuse 要素に値を設定する
         send(diffuse, offsetof(Material, diffuse), sizeof(Material::diffuse), first, count);
       }
 
-      /// @brief 環境光に対する反射係数と拡散反射係数を設定する.
-      /// 
-      ///   @param r 環境光に対する反射係数と拡散反射係数の赤成分.
-      ///   @param g 環境光に対する反射係数と拡散反射係数の緑成分.
-      ///   @param b 環境光に対する反射係数と拡散反射係数の青成分.
-      ///   @param a 環境光に対する反射係数と拡散反射係数の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 環境光に対する反射係数と拡散反射係数を設定する.
+      ///
+      /// @param r 環境光に対する反射係数と拡散反射係数の赤成分.
+      /// @param g 環境光に対する反射係数と拡散反射係数の緑成分.
+      /// @param b 環境光に対する反射係数と拡散反射係数の青成分.
+      /// @param a 環境光に対する反射係数と拡散反射係数の不透明度, デフォルトは 1.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadAmbientAndDiffuse(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 環境光に対する反射係数と拡散反射係数を設定する.
-      /// 
-      ///   @param color 環境光に対する反射係数と拡散反射係数を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 三角形に単純な陰影付けを行うシェーダが参照する材質データ：環境光に対する反射係数と拡散反射係数を設定する.
+      ///
+      /// @param color 環境光に対する反射係数と拡散反射係数を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
+      void loadAmbientAndDiffuse(const GgVector& color, GLint first = 0, GLsizei count = 1) const;
+
+      ///
+      /// 環境光に対する反射係数と拡散反射係数を設定する.
+      ///
+      /// @param color 環境光に対する反射係数と拡散反射係数を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadAmbientAndDiffuse(const GLfloat* color, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 鏡面反射係数を設定する.
-      /// 
-      ///   @param r 鏡面反射係数の赤成分.
-      ///   @param g 鏡面反射係数の緑成分.
-      ///   @param b 鏡面反射係数の青成分.
-      ///   @param a 鏡面反射係数の不透明度, デフォルトは 1.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 鏡面反射係数を設定する.
+      ///
+      /// @param r 鏡面反射係数の赤成分.
+      /// @param g 鏡面反射係数の緑成分.
+      /// @param b 鏡面反射係数の青成分.
+      /// @param a 鏡面反射係数の不透明度, デフォルトは 1.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadSpecular(
         GLfloat r, GLfloat g, GLfloat b, GLfloat a = 1.0f,
         GLint first = 0, GLsizei count = 1
       ) const;
 
-      /// @brief 鏡面反射係数を設定する.
-      /// 
-      ///   @param specular 鏡面反射係数を格納した GLfloat 型の 4 要素の配列変数.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 三角形に単純な陰影付けを行うシェーダが参照する材質データ：鏡面反射係数を設定する.
+      ///
+      /// @param ambient 鏡面反射係数を格納した GgVector 型の変数.
+      /// @param first 値を設定する光源データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する光源データの数, デフォルトは 1.
+      ///
+      void loadSpecular(const GgVector& specular, GLint first = 0, GLsizei count = 1) const;
+
+      ///
+      /// 鏡面反射係数を設定する.
+      ///
+      /// @param specular 鏡面反射係数を格納した GLfloat 型の 4 要素の配列変数.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadSpecular(const GLfloat* specular, GLint first = 0, GLsizei count = 1) const
       {
         // first 番目のブロックから count 個の specular 要素に値を設定する
         send(specular, offsetof(Material, specular), sizeof(Material::specular), first, count);
       }
 
-      /// @brief 輝き係数を設定する.
-      /// 
-      ///   @param shininess 輝き係数.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 輝き係数を設定する.
+      ///
+      /// @param shininess 輝き係数.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadShininess(GLfloat shininess, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 輝き係数を設定する.
-      /// 
-      ///   @param shininess 輝き係数.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 輝き係数を設定する.
+      ///
+      /// @param shininess 輝き係数.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void loadShininess(const GLfloat* shininess, GLint first = 0, GLsizei count = 1) const;
 
-      /// @brief 材質を設定する.
-      /// 
-      ///   @param material 光源の特性の GgSimpleShader::Material 構造体のポインタ.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 材質を設定する.
+      ///
+      /// @param material 光源の特性の GgSimpleShader::Material 構造体のポインタ.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void load(const Material* material, GLint first = 0, GLsizei count = 1) const
       {
         send(material, 0, sizeof(Material), first, count);
       }
 
-      /// @brief 材質を設定する.
-      /// 
-      ///   @param material 光源の特性の GgSimpleShader::Material 構造体.
-      ///   @param first 値を設定する材質データの最初の番号, デフォルトは 0.
-      ///   @param count 値を設定する材質データの数, デフォルトは 1.
-      /// 
+      ///
+      /// 材質を設定する.
+      ///
+      /// @param material 光源の特性の GgSimpleShader::Material 構造体.
+      /// @param first 値を設定する材質データの最初の番号, デフォルトは 0.
+      /// @param count 値を設定する材質データの数, デフォルトは 1.
+      ///
       void load(const Material& material, GLint first = 0, GLsizei count = 1) const
       {
         load(&material, first, count);
       }
 
-      /// @brief 材質を選択する.
-      /// 
-      ///   @param i 材質データの uniform block のインデックス.
-      /// 
+      ///
+      /// 材質を選択する.
+      ///
+      /// @param i 材質データの uniform block のインデックス.
+      ///
       void select(GLint i = 0) const
       {
         // バッファオブジェクトの i 番目のブロックの位置
@@ -6936,7 +7883,8 @@ namespace gg
       }
     };
 
-    /// @brief シェーダプログラムの使用を開始する.
+    ///
+    /// シェーダプログラムの使用を開始する.
     ///
     void use() const
     {
@@ -6944,12 +7892,13 @@ namespace gg
       GgPointShader::use();
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列と法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    ///   @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列と法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    /// @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
+    ///
     void use(const GLfloat* mp, const GLfloat* mv, const GLfloat* mn) const
     {
       // プログラムオブジェクトを指定する
@@ -6959,42 +7908,46 @@ namespace gg
       loadMatrix(mp, mv, mn);
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列と法線変換行列を指定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    ///   @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列と法線変換行列を指定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    /// @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
+    ///
     void use(const GgMatrix& mp, const GgMatrix& mv, const GgMatrix& mn) const
     {
       use(mp.get(), mv.get(), mn.get());
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    ///
     void use(const GLfloat* mp, const GLfloat* mv) const
     {
       use(mp, mv, GgMatrix(mv).normal().get());
     }
 
-    /// @brief 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    /// 
+    ///
+    /// 投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    ///
     void use(const GgMatrix& mp, const GgMatrix& mv) const
     {
       use(mp, mv, mv.normal());
     }
 
-    /// @brief 光源を指定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(const LightBuffer* light, GLint i = 0) const
     {
       // プログラムオブジェクトを指定する
@@ -7004,24 +7957,26 @@ namespace gg
       light->select(i);
     }
 
-    /// @brief 光源を指定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param light 光源の特性の gg::LightBuffer 構造体.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param light 光源の特性の gg::LightBuffer 構造体.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(const LightBuffer& light, GLint i = 0) const
     {
       use(&light, i);
     }
 
-    /// @brief 光源を指定し投影変換行列とモデルビュー変換行列と法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    ///   @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
-    ///   @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定し投影変換行列とモデルビュー変換行列と法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    /// @param mn GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列の法線変換行列.
+    /// @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(
       const GLfloat* mp,
       const GLfloat* mv,
@@ -7037,14 +7992,15 @@ namespace gg
       loadMatrix(mp, mv, mn);
     }
 
-    /// @brief 光源を指定し投影変換行列とモデルビュー変換行列と法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    ///   @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
-    ///   @param light 光源の特性の gg::LightBuffer 構造体.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定し投影変換行列とモデルビュー変換行列と法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    /// @param mn GgMatrix 型のモデルビュー変換行列の法線変換行列.
+    /// @param light 光源の特性の gg::LightBuffer 構造体.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(
       const GgMatrix& mp,
       const GgMatrix& mv,
@@ -7056,13 +8012,14 @@ namespace gg
       use(mp.get(), mv.get(), mn.get(), &light, i);
     }
 
-    /// @brief 光源を指定し投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
-    ///   @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定し投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param mv GLfloat 型の 16 要素の配列変数に格納されたモデルビュー変換行列.
+    /// @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(
       const GLfloat* mp,
       const GLfloat* mv,
@@ -7073,13 +8030,14 @@ namespace gg
       use(mp, mv, GgMatrix(mv).normal().get(), light, i);
     }
 
-    /// @brief 光源を指定し投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param mv GgMatrix 型のモデルビュー変換行列.
-    ///   @param light 光源の特性の gg::LightBuffer 構造体.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定し投影変換行列とモデルビュー変換行列を設定しモデルビュー変換行列から求めた法線変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param mv GgMatrix 型のモデルビュー変換行列.
+    /// @param light 光源の特性の gg::LightBuffer 構造体.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(
       const GgMatrix& mp,
       const GgMatrix& mv,
@@ -7090,12 +8048,13 @@ namespace gg
       use(mp, mv, mv.normal(), light, i);
     }
 
-    /// @brief 光源を指定し投影変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
-    ///   @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定し投影変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GLfloat 型の 16 要素の配列変数に格納された投影変換行列.
+    /// @param light 光源の特性の gg::LightBuffer 構造体のポインタ.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(const GLfloat* mp, const LightBuffer* light, GLint i = 0) const
     {
       // 光源を指定してプログラムオブジェクトを指定する
@@ -7105,12 +8064,13 @@ namespace gg
       loadProjectionMatrix(mp);
     }
 
-    /// @brief 光源を指定し投影変換行列を設定してシェーダプログラムの使用を開始する.
-    /// 
-    ///   @param mp GgMatrix 型の投影変換行列.
-    ///   @param light 光源の特性の gg::LightBuffer 構造体.
-    ///   @param i 光源データの uniform block のインデックス.
-    /// 
+    ///
+    /// 光源を指定し投影変換行列を設定してシェーダプログラムの使用を開始する.
+    ///
+    /// @param mp GgMatrix 型の投影変換行列.
+    /// @param light 光源の特性の gg::LightBuffer 構造体.
+    /// @param i 光源データの uniform block のインデックス.
+    ///
     void use(const GgMatrix& mp, const LightBuffer& light, GLint i = 0) const
     {
       // 光源を指定してプログラムオブジェクトを指定する
@@ -7118,14 +8078,15 @@ namespace gg
     }
   };
 
-  /// @brief 三角形分割された OBJ ファイルと MTL ファイルを読み込む (Arrays 形式)
   ///
-  ///   @param name 読み込む Wavefront OBJ ファイル名.
-  ///   @param group 読み込んだデータのポリゴングループごとの最初の三角形の番号と三角形数・材質番号.
-  ///   @param material 読み込んだデータのポリゴングループごとの GgSimpleShader::Material 型の材質.
-  ///   @param vert 読み込んだデータの頂点属性.
-  ///   @param normalize true なら読み込んだデータの大きさを正規化する.
-  ///   @return ファイルの読み込みに成功したら true.
+  /// 三角形分割された OBJ ファイルと MTL ファイルを読み込む (Arrays 形式)
+  ///
+  /// @param name 読み込む Wavefront OBJ ファイル名.
+  /// @param group 読み込んだデータのポリゴングループごとの最初の三角形の番号と三角形数・材質番号.
+  /// @param material 読み込んだデータのポリゴングループごとの GgSimpleShader::Material 型の材質.
+  /// @param vert 読み込んだデータの頂点属性.
+  /// @param normalize true なら読み込んだデータの大きさを正規化する.
+  /// @return ファイルの読み込みに成功したら true.
   ///
   extern bool ggLoadSimpleObj(
     const std::string& name,
@@ -7135,15 +8096,16 @@ namespace gg
     bool normalize = false
   );
 
-  /// @brief 三角形分割された OBJ ファイルを読み込む (Elements 形式).
   ///
-  ///   @param name 読み込む Wavefront OBJ ファイル名.
-  ///   @param group 読み込んだデータのポリゴングループごとの最初の三角形の番号と三角形数・材質番号.
-  ///   @param material 読み込んだデータのポリゴングループごとの材質.
-  ///   @param vert 読み込んだデータの頂点属性.
-  ///   @param face 読み込んだデータの三角形の頂点インデックス.
-  ///   @param normalize true なら読み込んだデータの大きさを正規化する.
-  ///   @return ファイルの読み込みに成功したら true.
+  /// 三角形分割された OBJ ファイルを読み込む (Elements 形式).
+  ///
+  /// @param name 読み込む Wavefront OBJ ファイル名.
+  /// @param group 読み込んだデータのポリゴングループごとの最初の三角形の番号と三角形数・材質番号.
+  /// @param material 読み込んだデータのポリゴングループごとの材質.
+  /// @param vert 読み込んだデータの頂点属性.
+  /// @param face 読み込んだデータの三角形の頂点インデックス.
+  /// @param normalize true なら読み込んだデータの大きさを正規化する.
+  /// @return ファイルの読み込みに成功したら true.
   ///
   extern bool ggLoadSimpleObj(
     const std::string& name,
@@ -7154,7 +8116,8 @@ namespace gg
     bool normalize = false
   );
 
-  /// @brief Wavefront OBJ 形式のファイル (Arrays 形式).
+  ///
+  /// Wavefront OBJ 形式のファイル (Arrays 形式).
   ///
   class GgSimpleObj
   {
@@ -7169,32 +8132,56 @@ namespace gg
 
   public:
 
-    /// @brief コンストラクタ.
-    /// 
-    ///   @param name 三角形分割された Alias OBJ 形式のファイルのファイル名.
-    ///   @param normalize true なら図形のサイズを [-1, 1] に正規化する.
-    /// 
+    ///
+    /// コンストラクタ.
+    ///
+    /// @param name 三角形分割された Alias OBJ 形式のファイルのファイル名.
+    /// @param normalize true なら図形のサイズを [-1, 1] に正規化する.
+    ///
     GgSimpleObj(const std::string& name, bool normalize = false);
 
-    /// @brief デストラクタ.
+    ///
+    /// デストラクタ.
     virtual ~GgSimpleObj()
     {
     }
 
-    /// @brief 形状データの取り出し.
-    /// 
-    ///   @return GgTriangles 型の形状データのポインタ.
-    /// 
+    ///
+    /// オブジェクトが有効かどうか調べる.
+    ///
+    /// @return オブジェクトが有効なら true
+    ///
+    explicit operator bool() const noexcept
+    {
+      return data.get() != nullptr;
+    }
+
+    ///
+    /// オブジェクトが有効かどうかの結果を反転する.
+    ///
+    /// @return オブジェクトが有効なら false, 無効なら true.
+    ///
+    bool operator!() const noexcept
+    {
+      return !static_cast<bool>(*this);
+    }
+
+    ///
+    /// 形状データの取り出し.
+    ///
+    /// @return GgTriangles 型の形状データのポインタ.
+    ///
     const GgTriangles* get() const
     {
       return data.get();
     }
 
-    /// @brief Wavefront OBJ 形式のデータを描画する手続き.
-    /// 
-    ///   @param first 描画する最初のパーツ番号.
-    ///   @param count 描画するパーツの数, 0 なら全部のパーツを描く.
-    /// 
+    ///
+    /// Wavefront OBJ 形式のデータを描画する手続き.
+    ///
+    /// @param first 描画する最初のパーツ番号.
+    /// @param count 描画するパーツの数, 0 なら全部のパーツを描く.
+    ///
     virtual void draw(GLint first = 0, GLsizei count = 0) const;
   };
 }

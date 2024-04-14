@@ -153,6 +153,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="gg.cpp" />
+    <ClCompile Include="GgApp.cpp" />
     <ClCompile Include="oglcv.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
